@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Update package lists
+# Update the package list
 echo "Updating package lists..."
 apt-get update -y
 
-# Install necessary build tools and compilers for Python packages like scipy
+# Install necessary system dependencies for Python packages like scipy
 echo "Installing system dependencies..."
 apt-get install -y \
     gfortran \
@@ -32,9 +32,21 @@ source /venv/bin/activate
 echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Install the Python dependencies
+# Install the Python dependencies from requirements.txt
 echo "Installing Python dependencies..."
 pip install -r /app/requirements.txt
+
+# Collect static files
+echo "Collecting static files..."
+python /app/manage.py collectstatic --noinput
+
+# Apply database migrations
+echo "Applying database migrations..."
+python /app/manage.py migrate --noinput
+
+# Run the NFD Processor (as requested)
+echo "Running NFD processor..."
+python /app/core/nfd_processor.py
 
 # Deactivate the virtual environment
 deactivate
