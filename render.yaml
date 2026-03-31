@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: shm-app  # The name of your service (you can change it)
+    env: docker    # Tells Render that you're using Docker
+    dockerfilePath: ./Dockerfile  # Path to your Dockerfile (from the root directory)
+    buildCommand: "docker build -t my-django-app ."  # Command to build the Docker image
+    startCommand: "docker run -p 8000:8000 my-django-app"  # Command to run the container
