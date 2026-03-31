@@ -10,6 +10,7 @@ COPY . /app/
 # Install system dependencies for building packages like scipy
 RUN apt-get update && apt-get install -y \
     gfortran \
+    flang \
     build-essential \
     libatlas3-base \
     libopenblas-dev \
@@ -18,7 +19,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     curl \
     meson \
-    ninja-build
+    ninja-build \
+    wget \
+    && apt-get clean
 
 # Install virtual environment package if not already available
 RUN apt-get install -y python3-venv
