@@ -1,0 +1,2102 @@
+{% extends "base_dashboard.html" %}
+{% block title %}SHM Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+  [x-cloak] {
+    display: none !important;
+  }
+</style>
+
+<div x-data="{
+    page: localStorage.getItem('shmPage') || 'dashboard',
+    tab: 'event',
+
+    setPage(p) {
+      this.page = p
+      localStorage.setItem('shmPage', p)
+    }
+  }" class="flex h-full gap-6 p-6 w-full">
+
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 flex-shrink-0 rounded-[26px] p-6
+                bg-white/55 backdrop-blur-2xl
+                border border-white/60
+                shadow-[0_18px_60px_rgba(139,69,19,0.18)]
+                flex flex-col">
+
+    <!-- Title -->
+    <div class="mb-8">
+      <h2 class="text-lg font-bold">SHM Admin</h2>
+      <p class="text-xs opacity-70">Structural Health Monitoring</p>
+    </div>
+
+    <!-- Navigation (functional like NFD) -->
+    <nav class="space-y-2 text-sm">
+
+      <!-- Dashboard -->
+      <div role="button" tabindex="0" @click="setPage('dashboard')" @keydown.enter="page='dashboard'" :class="page==='dashboard'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-80 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Dashboard
+      </div>
+
+      <div role="button" tabindex="0"
+        @click="setPage('results')"
+        :class="page==='results'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-80 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Search
+      </div>
+
+      <!-- Hardware (replaces Monitoring) -->
+      <div role="button" tabindex="0" @click="setPage('hardware')" @keydown.enter="page='hardware'" :class="page==='hardware'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-80 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Hardware
+      </div>
+
+      <!-- Report (replaces Reports) -->
+      <div role="button" tabindex="0" @click="setPage('report')" @keydown.enter="page='report'" :class="page==='report'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-80 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Report
+      </div>
+
+      <!-- About (replaces Settings) -->
+      <div role="button" tabindex="0" @click="setPage('about')" @keydown.enter="page='about'" :class="page==='about'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-80 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        About
+      </div>
+
+    </nav>
+
+    <!-- LOGOUT (BOTTOM) -->
+    <div class="mt-auto pt-6">
+      <a href="{% url 'logout' %}" class="block text-center px-4 py-3 rounded-2xl
+                bg-gradient-to-r from-[var(--accent-100)] to-[var(--primary-300)]
+                text-white font-semibold shadow hover:opacity-90 transition">
+        Logout
+      </a>
+    </div>
+  </aside>
+
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 overflow-y-auto space-y-6 pb-10">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-[color:var(--text-100)]">
+        DASHBOARD
+      </h1>
+      <p class="text-sm opacity-70 mt-1">
+        Real-time structural condition overview
+      </p>
+    </div>
+
+    <!-- TOP STATUS CARDS (always visible) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+      <!-- Sensor Status -->
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur
+                  border border-white/70
+                  shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">
+            Sensor Status
+          </div>
+          <span class="inline-flex items-center gap-2 text-xs opacity-80">
+            <span class="status-dot"></span>
+            {% if sensors %}
+            Online
+            {% else %}
+            Offline
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="mt-3 flex items-baseline justify-between">
+          <div class="text-2xl font-bold text-[color:var(--text-100)]">
+            RS4D
+          </div>
+          <div class="text-xs px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700">
+            {% if sensors %}
+            Connected
+            {% else %}
+            Disconnected
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mt-3 text-xs opacity-70">
+          Connection stable • Feed active
+        </div>
+      </div>
+
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur
+                  border border-white/70
+                  shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">
+            Last Update
+          </div>
+          <span class="inline-flex items-center gap-2 text-xs opacity-80">
+            <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+            Sync
+          </span>
+        </div>
+
+        <div id="last-update" class="mt-3 text-2xl font-bold text-[color:var(--text-100)]">
+          {% if last_update %}
+          {{ last_update|date:"F j, Y, g:i A" }}
+          {% else %}
+          --:--
+          {% endif %}
+        </div>
+
+        <div class="mt-3 text-xs opacity-70">
+
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur
+                  border border-white/70
+                  shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">
+            Alerts
+          </div>
+          <span id="alerts-badge" class="inline-flex items-center gap-2 text-xs opacity-80">
+            <span id="alerts-dot" class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            {% if active_alerts > 0 %}
+            Alert
+            {% else %}
+            Safe
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="mt-3 flex items-baseline gap-2">
+          <div id="alerts-count" class="text-2xl font-bold text-[color:var(--text-100)]">
+            {{ active_alerts }}
+          </div>
+          <div class="text-sm opacity-70">
+            active
+          </div>
+        </div>
+
+        <div id="alerts-desc" class="mt-3 text-xs opacity-70">
+          {% if active_alerts > 0 %}
+          Threshold exceeded
+          {% else %}
+          No thresholds exceeded
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- WORKSPACE -->
+    <div class="rounded-[28px] p-6
+                bg-white/55 backdrop-blur-2xl
+                border border-white/60
+                shadow-[0_18px_60px_rgba(139,69,19,0.15)]">
+
+
+      <!-- PAGE: DASHBOARD -->
+
+      <div x-show="page==='dashboard'" x-cloak class="flex flex-col gap-6">
+
+        <!-- Workspace Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-[color:var(--text-100)]">
+              SHM Workspace
+            </h2>
+            <p class="text-xs opacity-70 mt-1">
+              Structural monitoring & assessment
+            </p>
+          </div>
+
+          <!-- Tabs sa dashboard-->
+          <div class="inline-flex items-center gap-1
+                      rounded-2xl p-1
+                      bg-white/60 border border-white/70
+                      shadow-inner text-sm">
+
+            <button @click="tab='event'" :class="tab==='event' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'"
+              class="px-4 py-2 rounded-xl transition">
+              Event & Vibration
+            </button>
+
+            <button @click="tab='metrics'"
+              :class="tab==='metrics' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'"
+              class="px-4 py-2 rounded-xl transition">
+              Health Metrics
+            </button>
+
+            <button @click="tab='predict'"
+              :class="tab==='predict' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'"
+              class="px-4 py-2 rounded-xl transition">
+              Predictive Analytics
+            </button>
+          </div>
+        </div>
+
+        <!-- WORKSPACE CONTENT AREA -->
+        <div class="mt-6 rounded-2xl bg-white/40 p-5">
+
+          <!-- ================= EVENT TAB ================= -->
+          <div x-show="tab==='event'" x-cloak class="flex flex-col gap-4">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+
+              <!-- LEFT COLUMN -->
+              <div class="flex flex-col gap-4 md:col-span-1">
+
+                <div class="rounded-2xl bg-white/60 p-3 h-[70px]">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold opacity-70">Activity</span>
+                    <span class="text-[10px] opacity-50">Real-time</span>
+                  </div>
+
+                  <div class="mt-2 flex items-center gap-2">
+                    <span id="activity-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span id="activity-text" class="text-sm font-medium text-emerald-700">Ambient</span>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl bg-white/60 p-4">
+                  <h3 class="text-sm font-semibold mb-1">Peak Frequency</h3>
+                  <div id="peak-freq" class="text-2xl font-bold">
+                    {% if peak_frequency %}
+                    {{ peak_frequency|floatformat:2 }} Hz
+                    {% else %}
+                    --.-- Hz
+                    {% endif %}
+                  </div>
+                  <p class="text-xs opacity-60 mt-1">(dominant)</p>
+                </div>
+
+                <div class="rounded-2xl bg-white/60 p-4">
+                  <h3 class="text-sm font-semibold mb-1">Peak Acceleration</h3>
+                  <div id="peak-acc" class="text-2xl font-bold">
+                    {% if peak_acceleration %}
+                    {{ peak_acceleration|floatformat:4 }}
+                    {% else %}
+                    --.---
+                    {% endif %}
+                  </div>
+                  <p class="text-xs opacity-60 mt-1">(last 1 minute)</p>
+                </div>
+
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="md:col-span-2">
+                <div class="rounded-2xl bg-white/60 p-4 flex flex-col">
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold">Live Waveform</h3>
+                    <span class="text-xs opacity-60">CH: Z / N / E</span>
+                  </div>
+
+                  <div class="rounded-xl bg-white/50 p-2 h-[253px]">
+                    <canvas id="shmWaveform" class="w-full h-full"></canvas>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+          <!-- ================= END EVENT ================= -->
+
+
+          <!-- ================= METRICS TAB ================= -->
+          <div x-show="tab==='metrics'" x-cloak class="w-full">
+
+            <div class="flex gap-4">
+
+              <!-- LEFT SIDE -->
+              <div class="flex flex-col gap-4 w-[60%]">
+
+                <!-- TOP -->
+                <div class="flex gap-4">
+
+                  <!-- 🟦 FUNDAMENTAL -->
+                  <div class="w-1/2 rounded-2xl bg-white/60 p-5">
+                    <h3 class="text-sm font-semibold mb-1">Fundamental Frequency</h3>
+                    <div id="fundamental-freq" class="text-2xl font-bold">3.49 Hz</div>
+                    <p class="text-xs opacity-60 mt-1">Primary natural frequency</p>
+                  </div>
+
+                  <!-- 🟧 STRUCTURAL -->
+                  <div class="w-1/2 rounded-2xl bg-white/60 p-5 flex flex-col justify-center">
+                    <h3 class="text-sm font-semibold mb-1">Structural Condition</h3>
+                    <div id="structural-condition" class="text-lg font-semibold text-emerald-600">
+                      STABLE
+                    </div>
+                    <p class="text-xs opacity-60 mt-1">
+                      Based on frequency trends
+                    </p>
+                  </div>
+
+                </div>
+
+                <!-- BOTTOM -->
+
+                <div class="rounded-2xl bg-white/60 p-4 flex flex-col">
+
+                  <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-semibold">Spectral Density</h3>
+                    <span id="peak-spectrum" class="text-xs text-emerald-600 font-semibold">
+                      -- Hz peak
+                    </span>
+                  </div>
+
+                  <div class="h-40 rounded-xl bg-white/50 flex items-center justify-center text-xs opacity-50 italic">
+                    <canvas id="shmSpectrum" class="w-full h-full"></canvas>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- RIGHT SIDE (MODE SHAPE FULL HEIGHT) -->
+              <div class="w-[40%] rounded-2xl bg-white/60 p-4 flex flex-col">
+
+                <h3 class="text-sm font-semibold mb-2">Mode Shape Visualization</h3>
+
+
+                <div id="mode-shape-visual" class="flex-1 flex items-center justify-center">
+
+                  <div id="building" class="flex flex-col items-center gap-2 scale-125">
+
+                    <!-- Roof -->
+                    <div class="w-16 h-2 bg-slate-500 rounded-sm"></div>
+
+                    <!-- Floor 3 -->
+                    <div class="floor floor-3 w-20 h-5 bg-emerald-400 rounded"></div>
+
+                    <!-- Floor 2 -->
+                    <div class="floor floor-2 w-24 h-5 bg-emerald-400 rounded"></div>
+
+                    <!-- Floor 1 -->
+                    <div class="floor floor-1 w-28 h-5 bg-emerald-400 rounded"></div>
+
+                  </div>
+
+                </div>
+              </div>
+
+
+
+            </div>
+
+          </div>
+
+
+          <!-- ================= END METRICS ================= -->
+
+
+          <!-- ================= PREDICT TAB ================= -->
+          <div x-show="tab==='predict'" x-cloak class="flex flex-col gap-4">
+
+            <!-- TOP ROW -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <!-- BLUE: 3-SIGMA STATUS -->
+              <div class="rounded-2xl bg-white/60 p-4">
+                <h3 class="text-sm font-semibold mb-1">Sigma Status</h3>
+                <div id="predict-status" class="text-lg font-semibold text-emerald-600">
+                  Inside Safe Zone
+                </div>
+                <p class="text-xs opacity-60 mt-1">
+                  Within statistical limits
+                </p>
+              </div>
+
+              <!-- RED: RESIDUAL VALUE -->
+              <div class="rounded-2xl bg-white/60 p-4">
+                <h3 class="text-sm font-semibold mb-1">Residual Value</h3>
+                <div id="predict-residual" class="text-2xl font-bold">± --.-- Hz</div>
+                <p class="text-xs opacity-60 mt-1">
+                  Predicted minus measured frequency
+                </p>
+              </div>
+
+
+
+
+            </div>
+
+            <!-- GREEN: BASELINE COMPARISON -->
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs font-semibold uppercase opacity-60 mb-3">
+                Baseline Comparison
+              </div>
+
+              <div class="rounded-xl bg-white/50 p-4 space-y-4">
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Analytical Frequency (SEISMO BUILD)</span>
+                  <span id="predict-seismobuild-frequency" class="font-medium">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Measured Frequency (OMA)</span>
+                  <span id="predict-measured-frequency" class="font-medium">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Matched Mode</span>
+                  <span id="predict-matched-mode" class="font-semibold">--</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Frequency Difference</span>
+                  <span id="predict-diff-hz" class="font-medium">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Difference</span>
+                  <span id="predict-diff-percent" class="font-semibold text-emerald-600">--.-- %</span>
+                </div>
+
+                <div class="pt-2 text-xs opacity-60">
+                  Minor variation is expected due to ambient excitation and modeling assumptions.
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- ================= END PREDICT ================= -->
+
+        </div>
+      </div>
+
+
+      <!-- ================= PAGE: RESULTS ================= -->
+        <div x-show="page==='results'" x-cloak class="flex flex-col gap-6">
+
+          <!-- HEADER -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Search Analysis</h2>
+              <p class="text-xs opacity-70">
+                Find and Analyze Vibration Data
+              </p>
+            </div>
+
+            <button onclick="exportSHMPDF()"
+              class="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm shadow hover:bg-red-600 transition">
+              Export PDF
+            </button>
+          </div>
+
+          <!-- ================= SEARCH ================= -->
+          <div class="rounded-2xl bg-white/50 p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div>
+              <label class="text-xs opacity-60">Date & Time</label>
+              <input type="datetime-local" id="shm-datetime"
+                class="w-full mt-1 text-sm bg-transparent outline-none">
+            </div>
+
+            <div>
+              <label class="text-xs opacity-60">Duration (seconds)</label>
+              <input type="number" id="shm-duration"
+                class="w-full mt-1 text-sm bg-transparent outline-none">
+            </div>
+
+            <div class="flex items-end">
+              <button onclick="runSHMSearch()"
+                class="w-full px-4 py-3 rounded-xl bg-orange-500 text-white font-semibold shadow hover:bg-red-600 transition">
+                Run Search
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ================= CORE METRICS ================= -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Peak Frequency</div>
+              <div id="res-freq" class="text-xl font-bold">--.-- Hz</div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Peak Acceleration</div>
+              <div id="res-acc" class="text-xl font-bold">--.---- g</div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Sigma Status</div>
+              <div id="res-sigma" class="text-lg font-semibold">--</div>
+            </div>
+
+          </div>
+
+          <!-- ================= ENGINEERING ================= -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Residual Value</div>
+              <div id="res-residual" class="text-lg font-bold">--.-- Hz</div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Stiffness Retention</div>
+              <div id="res-stiffness" class="text-lg font-bold text-emerald-600">-- %</div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <div class="text-xs opacity-60">Drift Assessment</div>
+              <div id="res-drift" class="text-lg font-semibold">--</div>
+            </div>
+
+          </div>
+
+          <!-- ================= BASELINE ================= -->
+          <div class="rounded-2xl bg-white/60 p-5">
+
+            <div class="text-sm font-semibold mb-4">SHM Baseline Comparison</div>
+
+            <div class="space-y-3 text-sm">
+
+              <div class="flex justify-between">
+                <span>Analytical Frequency (SEISMO BUILD)</span>
+                <span id="res-base">--.-- Hz</span>
+              </div>
+
+              <div class="flex justify-between">
+                <span>Measured Frequency (OMA)</span>
+                <span id="res-measured">--.-- Hz</span>
+              </div>
+
+              <div class="flex justify-between">
+                <span>Matched Mode</span>
+                <span id="res-mode">--</span>
+              </div>
+
+              <div class="flex justify-between">
+                <span>Frequency Difference</span>
+                <span id="res-diffhz">--.-- Hz</span>
+              </div>
+
+              <div class="flex justify-between">
+                <span>Percentage Difference</span>
+                <span id="res-diffpct" class="text-emerald-600">--.-- %</span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      
+
+      <!-- ================= PAGE: HARDWARE ================= -->
+      <div x-show="page==='hardware'" x-cloak>
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">
+              Hardware Status
+            </h2>
+            <p class="text-xs opacity-70 mt-1">
+              Sensor • Latency • Time Sync
+            </p>
+          </div>
+        </div>
+
+        <!-- MAIN CONTAINER -->
+        <div class="mt-4 rounded-2xl bg-white/40 p-4">
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <!-- 🟢 SENSOR CONNECTIVITY -->
+            <div class="rounded-2xl bg-white/60 p-4 flex flex-col justify-between min-h-[150px]">
+
+              <!-- TOP -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold flex items-center gap-2">
+                    📡 Sensor Connectivity
+                  </h3>
+
+                  <span class="flex items-center gap-1 text-xs text-emerald-600">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Online
+                  </span>
+                </div>
+
+                <p class="text-base font-medium text-slate-600">RS4D sensor responding normally</p>
+              </div>
+
+              <!-- BOTTOM (ALIGNED) -->
+              <div>
+                <div class="mt-3 activity-bar"></div>
+                <p class="text-[10px] opacity-50 mt-2">
+                  Last checked: just now
+                </p>
+              </div>
+
+            </div>
+
+            <!-- 🟡 DATA LATENCY -->
+            <div class="rounded-2xl bg-white/60 p-4 flex flex-col justify-between min-h-[150px]">
+
+              <!-- TOP -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold flex items-center gap-2">
+                    ⏱ Data Latency
+                  </h3>
+                </div>
+
+                <div class="text-2xl font-bold text-emerald-600">
+                  <p id="latency-value">-- ms</p>
+                </div>
+
+                <p class="text-xs opacity-60 mt-1">
+                  Average sensor ping
+                </p>
+              </div>
+
+              <!-- BOTTOM (ALIGNED) -->
+              <div>
+                <div class="mt-3 activity-bar"></div>
+                <p class="text-[10px] opacity-50 mt-2">
+                  Real-time measurement
+                </p>
+              </div>
+
+            </div>
+
+            <!-- 🔵 NTP SYNC -->
+            <div class="rounded-2xl bg-white/60 p-4 flex flex-col justify-between min-h-[150px]">
+
+              <!-- TOP -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold flex items-center gap-2">
+                    🌐 NTP Sync Status
+                  </h3>
+
+                  <span class="flex items-center gap-1 text-xs text-emerald-600">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Synchronized
+                  </span>
+                </div>
+
+                <p class="text-base font-medium text-slate-600">System clock aligned with NTP server</p>
+              </div>
+
+              <!-- BOTTOM (ALIGNED) -->
+              <div>
+                <div class="mt-3 activity-bar"></div>
+                <p class="text-[10px] opacity-50 mt-2">
+                  Time drift: minimal
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+      <!-- ================= END HARDWARE ================= -->
+
+
+      <!-- PAGE: REPORT -->
+
+      <div x-show="page==='report'" x-cloak>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Final Engineering Report</h2>
+            <p class="text-xs opacity-70 mt-1">Summary • Compliance • Download</p>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl bg-white/40 p-6 flex flex-col gap-6">
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <h3 class="text-sm font-semibold mb-1">Stiffness Retention Score</h3>
+              <div id="stiffness-score" class="text-3xl font-bold text-emerald-600">-- %</div>
+              <p class="text-xs opacity-60 mt-1">Estimated structural integrity</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <h3 class="text-sm font-semibold mb-1">NSCP 2010 Compliance</h3>
+              <div class="text-lg font-semibold text-emerald-600">PASS</div>
+              <p class="text-xs opacity-60 mt-1">Serviceability criteria satisfied</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+              <h3 class="text-sm font-semibold mb-1">Drift Assessment</h3>
+              <div id="drift-assessment" class="text-lg font-semibold text-emerald-600">
+                --
+              </div>
+              <p class="text-xs opacity-60 mt-1">Vertical & lateral drift checks</p>
+            </div>
+
+          </div>
+          <!-- ================= REPORT HISTORY ================= -->
+          <div class="mt-6 rounded-2xl bg-white/40 p-6 flex flex-col gap-4">
+
+            <!-- HEADER -->
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold">
+                Monitoring History
+              </h3>
+
+              <div class="text-xs opacity-60">
+                Download PDF
+              </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+              <!-- FROM -->
+              <div class="rounded-xl bg-white/60 p-3">
+                <label class="text-[13px] opacity-60">From</label>
+                <input type="date" name="from_date"
+                        onchange="applyFilter()"
+                        class="w-full text-sm bg-transparent outline-none mt-1">
+              </div>
+
+              <!-- TO -->
+              <div class="rounded-xl bg-white/60 p-3">
+                <label class="text-[13px] opacity-60">To</label>
+                <input type="date" name="to_date" onchange="applyFilter()"
+                class="w-full text-sm bg-transparent outline-none mt-1">
+              </div>
+
+              <!-- EVENT TYPE -->
+              <div class="rounded-xl bg-white/60 p-3">
+                <label class="text-[13px] opacity-60">Event Type</label>
+                <select name="classification" onchange="applyFilter()"
+                  class="w-full text-sm bg-transparent outline-none mt-1">
+
+                  <option value="">All</option>
+                  <option value="Ambient">Ambient</option>
+                  <option value="Human Activity">Human Activity</option>
+                  <option value="Seismic">Seismic</option>
+
+                </select>
+
+              </div>
+            </div>
+
+              <!-- RECORD LIST (BIGGER) -->
+              <div id="shm-history-container">
+
+                {% for record in history_records %}
+                <div x-data="{ open: false }"
+                  class="bg-white/70 rounded-2xl p-4 shadow-sm cursor-pointer transition hover:shadow-md">
+
+                  <!-- TOP ROW -->
+                  <div class="flex justify-between items-center" @click="open = !open">
+
+                    <!-- LEFT -->
+                    <div>
+                      <div class="font-semibold text-sm text-gray-800">
+                        {{ record.timestamp|date:"Y-m-d • H:i" }}
+                      </div>
+                      <div class="text-xs opacity-60">
+                        fₙ: {{ record.peak_frequency|floatformat:2 }} Hz •
+                        Peak Acc: {{ record.peak_acceleration|floatformat:4 }} g
+                      </div>
+                    </div>
+
+                    <!-- RIGHT -->
+                    <div class="flex items-center gap-2 text-xs">
+
+                      <!-- EVENT TYPE -->
+                      <span class="px-2 py-1 rounded-full
+                        {% if record.classification == 'Ambient' %}
+                          bg-emerald-100 text-emerald-700
+                        {% elif record.classification == 'Human Activity' %}
+                          bg-amber-100 text-amber-700
+                        {% else %}
+                          bg-red-100 text-red-700
+                        {% endif %}
+                        ">
+                          {{ record.classification }}
+                        </span>
+
+                      
+
+                      <!-- PDF -->
+                      <a href="/export/?id={{ record.id }}" 
+                         class="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-green-600 transition shadow-sm">
+                        PDF
+                      </a>
+
+                    </div>
+                  </div>
+
+                  <!-- EXPANDED DETAILS -->
+                  <div x-show="open" x-transition
+                    class="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm text-gray-700">
+
+                    <div>
+                      <span class="text-gray-400">Baseline Frequency</span><br>
+                      <span class="font-medium">{{ record.baseline_frequency|floatformat:2 }} Hz</span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-400">Peak Frequency</span><br>
+                      <span class="font-medium">{{ record.peak_frequency|floatformat:2 }}</span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-400">Residual Value</span><br>
+                      <span class="font-medium">{{ record.residual_value|floatformat:2 }} Hz</span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-400">Stiffness</span><br>
+                      <span class="font-medium">{{ record.stiffness|floatformat:2 }} %</span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-400">Drift Assessment</span><br>
+                      <span class="font-medium
+      {% if record.drift_assessment == 'Within Allowable Limits' %}
+        text-emerald-600
+      {% elif record.drift_assessment == 'Moderate Drift' %}
+        text-amber-500
+      {% else %}
+        text-red-600
+      {% endif %}
+    ">
+                        {{ record.drift_assessment }}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-400">Structural Condition</span><br>
+                      <span class="font-medium
+      {% if record.structural_condition == 'STABLE' %}
+        text-emerald-600
+      {% else %}
+        text-red-600
+      {% endif %}
+    ">
+                        {{ record.structural_condition }}
+                      </span>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {% empty %}
+                <div class="text-center text-sm opacity-60 py-10">
+                  No monitoring history yet
+                </div>
+                {% endfor %}
+
+              </div>
+              <!-- ================= END REPORT HISTORY ================= -->
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- PAGE: ABOUT (like NFD) -->
+
+        <div x-show="page==='about'" x-cloak>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="font-semibold text-lg text-[color:var(--text-100)]">About</h2>
+              <p class="text-xs opacity-70 mt-1">Project Overview • Sensor Specs • Research Team</p>
+            </div>
+          </div>
+
+          <div class="mt-6 h-[550px] rounded-2xl bg-white/40 p-5 overflow-auto space-y-4">
+
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Project Overview</div>
+              <p class="mt-2 text-sm opacity-80 leading-relaxed">
+                This Structural Health Monitoring System (SHMS) provides centralized monitoring of vibration response,
+                supports event detection, and presents structural health metrics to help assess the condition of the
+                Science & Technology Building.
+              </p>
+            </div>
+
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Sensor Specifications</div>
+              <p class="mt-2 text-sm opacity-80 leading-relaxed">
+                Raspberry Shake 4D (RS4D) • Channels: Z / N / E • Used for capturing vibration signals for
+                monitoring, frequency-domain analysis, and modal interpretation. (Add exact RS4D specs here later.)
+              </p>
+            </div>
+
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Research Team</div>
+              <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Mendoza, Nicole Keith I.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Aquino, Hannah May B.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Campo, John Dave P.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Ferrer, Pia Angela M.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Gondraneos, Alaisha Joy C.</span>
+  </div>
+
+</div>
+              <div class="mt-3 text-xs opacity-60">
+                Acknowledgments: (optional) University / adviser / contributors.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+      <script>
+        let shmChart = null;
+
+        function drawSHMWaveform(samples) {
+          const canvas = document.getElementById("shmWaveform");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+
+          // destroy old chart
+          if (shmChart) {
+            shmChart.destroy();
+          }
+
+          // 🔥 smoother + smaller visual scaling
+          const maxVal = (Math.max(...samples.map(v => Math.abs(v))) || 1) * 1.4;
+
+          shmChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: samples.map((_, i) => i),
+              datasets: [{
+                label: "Acceleration",
+                data: samples,
+                borderColor: "#1d4ed8",
+                borderWidth: 1.5,          // 🔥 thinner line
+                tension: 0.35,             // 🔥 smoother curve
+                pointRadius: 0,
+                fill: false,
+                spanGaps: true             // 🔥 cleaner continuity
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+
+              // 🔥 THIS MAKES GRAPH LOOK SMALLER (KEY)
+              layout: {
+                padding: {
+                  top: 20,
+                  bottom: 20,
+                  left: 10,
+                  right: 10
+                }
+              },
+
+              plugins: {
+                legend: { display: false }
+              },
+
+              scales: {
+                x: {
+                  display: true,
+                  grid: {
+                    color: "rgba(0,0,0,0.05)",
+                    lineWidth: 1
+                  },
+                  ticks: {
+                    display: false
+                  }
+                },
+                y: {
+                  display: true,
+                  min: -maxVal,
+                  max: maxVal,
+                  grid: {
+                    color: "rgba(0,0,0,0.08)",
+                    lineWidth: 1
+                  },
+                  ticks: {
+                    display: false
+                  }
+                }
+              },
+
+              elements: {
+                line: {
+                  borderWidth: 1.5
+                }
+              }
+            }
+          });
+        }
+
+
+
+        // 🔥 FETCH DATA (same as NFD)
+        async function loadSHMWaveform() {
+          try {
+            const response = await fetch("/api/latest-nfd-waveforms/");
+
+            if (!response.ok) {
+              console.warn("Waveform API failed:", response.status);
+              return;
+            }
+
+            const data = await response.json();
+
+            if (data.filtered_signal && data.filtered_signal.length > 0) {
+              drawSHMWaveform(data.filtered_signal);
+            }
+            if (data.spectrum_freqs && data.spectrum_magnitude) {
+              drawSHMSpectrum(data.spectrum_freqs, data.spectrum_magnitude);
+            }
+
+          } catch (err) {
+            console.error("SHM waveform error:", err);
+          }
+        }
+
+
+        // 🔁 AUTO REFRESH EVERY 5 SEC
+        loadSHMWaveform();
+        setInterval(() => {
+          if (document.visibilityState === "visible") {
+            loadSHMWaveform();
+          }
+        }, 10000);
+
+      </script>
+
+
+      <script>
+        async function updateSHMMetrics() {
+          try {
+            const response = await fetch("/api/shm/latest-metrics/");
+            const data = await response.json();
+
+            const peakFreqEl = document.getElementById("peak-freq");
+            const peakAccEl = document.getElementById("peak-acc");
+            const lastUpdateEl = document.getElementById("last-update");
+
+            if (peakFreqEl) {
+              peakFreqEl.innerText =
+                data.peak_frequency != null
+                  ? Number(data.peak_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (peakAccEl) {
+              peakAccEl.innerText =
+                data.peak_acceleration != null
+                  ? Number(data.peak_acceleration).toFixed(4)
+                  : "--.---";
+            }
+
+            if (lastUpdateEl) {
+              if (data.last_update) {
+                const date = new Date(data.last_update);
+             const datePart = date.toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+});
+
+const timePart = date.toLocaleTimeString('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+});
+
+lastUpdateEl.innerHTML = `
+  <div class="text-lg font-semibold">${datePart}</div>
+  <div class="flex items-center gap-1 text-base font-medium opacity-80">
+    <span>🕒</span>
+    <span>${timePart}</span>
+  </div>
+`;
+              } else {
+                lastUpdateEl.innerText = "--:--";
+              }
+            }
+
+            const activityTextEl = document.getElementById("activity-text");
+            const structuralEl = document.getElementById("structural-condition");
+            const activityDotEl = document.getElementById("activity-dot");
+
+            const alertsCountEl = document.getElementById("alerts-count");
+            const alertsBadgeEl = document.getElementById("alerts-badge");
+            const alertsDescEl = document.getElementById("alerts-desc");
+
+            if (data.peak_frequency != null) {
+              const freq = Number(data.peak_frequency);
+
+              // 🔥 STRUCTURAL CONDITION LOGIC
+              if (structuralEl) {
+                if (freq > 20) {
+                  structuralEl.innerText = "UNSTABLE";
+                  structuralEl.className = "text-lg font-semibold text-red-600";
+                } else {
+                  structuralEl.innerText = "STABLE";
+                  structuralEl.className = "text-lg font-semibold text-emerald-600";
+                }
+              }
+
+              let activityLabel = "No Data";
+              let activityTextClass = "text-sm font-medium text-slate-500";
+              let activityDotClass = "w-2.5 h-2.5 rounded-full bg-slate-400";
+
+              let alertCount = 0;
+              let alertLabel = "Safe";
+              let alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+              let alertDesc = "No thresholds exceeded";
+
+              if (freq >= 0.5 && freq <= 5.0) {
+                activityLabel = "Ambient";
+                activityTextClass = "text-sm font-medium text-emerald-700";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+
+                alertCount = 0;
+                alertLabel = "Safe";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+                alertDesc = "No thresholds exceeded";
+
+              } else if (freq > 5.0 && freq <= 9.8) {
+                activityLabel = "Human Activity";
+                activityTextClass = "text-sm font-medium text-amber-600";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-amber-500";
+
+                alertCount = 0;
+                alertLabel = "Safe";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+                alertDesc = "No thresholds exceeded";
+
+              } else if (freq > 9.8 && freq <= 20.0) {
+                activityLabel = "Unusual / Transient";
+                activityTextClass = "text-sm font-medium text-red-600";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-red-500";
+
+                alertCount = 1;
+                alertLabel = "Alert";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-red-500";
+                alertDesc = "Threshold exceeded";
+              }
+
+              if (activityTextEl) {
+                activityTextEl.innerText = activityLabel;
+                activityTextEl.className = activityTextClass;
+              }
+
+              if (activityDotEl) {
+                activityDotEl.className = activityDotClass;
+              }
+
+              if (alertsCountEl) {
+                alertsCountEl.innerText = alertCount;
+              }
+
+              if (alertsBadgeEl) {
+                alertsBadgeEl.innerHTML = `<span id="alerts-dot" class="${alertDotClass}"></span>${alertLabel}`;
+              }
+
+              if (alertsDescEl) {
+                alertsDescEl.innerText = alertDesc;
+              }
+            }
+
+          } catch (err) {
+            console.error("Failed to update SHM metrics:", err);
+          }
+        }
+
+        // run once on page load
+        updateSHMMetrics();
+
+        // auto update every 60 seconds
+        setInterval(updateSHMMetrics, 5000);
+      </script>
+
+      <script>
+        let shmSpectrumChart = null;
+
+        function drawSHMSpectrum(freqs, magnitudes) {
+          const canvas = document.getElementById("shmSpectrum");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+          // 🔥 FIND PEAK FREQUENCY
+          let peakIndex = 0;
+          let peakFreq = 0;
+
+          if (freqs.length && magnitudes.length) {
+            peakIndex = magnitudes.indexOf(Math.max(...magnitudes));
+            peakFreq = freqs[peakIndex] || 0;
+
+            const peakEl = document.getElementById("peak-spectrum");
+            if (peakEl) {
+              peakEl.innerText = peakFreq.toFixed(2) + " Hz peak";
+            }
+          }
+
+          if (shmSpectrumChart) {
+            shmSpectrumChart.destroy();
+          }
+
+          shmSpectrumChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: freqs,
+              datasets: [
+                {
+                  label: "Spectral Density",
+                  data: magnitudes,
+                  borderColor: "#dc2626",
+                  borderWidth: 2,
+                  tension: 0.25,
+                  pointRadius: 0,
+                  fill: false
+                },
+
+                // ✅ GREEN PEAK DOT (FIXED)
+                {
+                  data: magnitudes.map((v, i) => i === peakIndex ? v : null),
+                  pointRadius: 5,
+                  pointBackgroundColor: "#16a34a",
+                  pointBorderColor: "#ffffff",
+                  pointBorderWidth: 2,
+                  showLine: false
+                }
+              ]
+
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+
+              plugins: {
+                legend: { display: false }
+              },
+
+              scales: {
+                x: {
+                  display: false,   // ❌ removes axis line + ticks
+                  grid: {
+                    display: false  // ❌ removes vertical grid lines
+                  }
+                },
+                y: {
+                  ticks: { display: false },
+                  grid: {
+                    color: "rgba(0,0,0,0.05)"
+                  }
+                }
+              }
+            }
+          });
+        }
+      </script>
+
+
+
+      <script>
+        async function updateSHMPredictive() {
+          try {
+            const response = await fetch("/api/shm/predictive/");
+            const data = await response.json();
+
+            const statusEl = document.getElementById("predict-status");
+            const residualEl = document.getElementById("predict-residual");
+            const seismoEl = document.getElementById("predict-seismobuild-frequency");
+            const measuredEl = document.getElementById("predict-measured-frequency");
+            const modeEl = document.getElementById("predict-matched-mode");
+            const diffHzEl = document.getElementById("predict-diff-hz");
+            const diffPctEl = document.getElementById("predict-diff-percent");
+
+            if (statusEl) {
+              statusEl.innerText = data.sigma_status || "No Data";
+
+              if (data.sigma_status === "Inside Safe Zone") {
+                statusEl.className = "text-lg font-semibold text-emerald-600";
+              } else if (data.sigma_status === "Warning Zone") {
+                statusEl.className = "text-lg font-semibold text-amber-600";
+              } else {
+                statusEl.className = "text-lg font-semibold text-red-600";
+              }
+            }
+
+            if (residualEl) {
+              residualEl.innerText =
+                data.residual_value != null
+                  ? `${data.residual_value >= 0 ? "+" : ""}${Number(data.residual_value).toFixed(2)} Hz`
+                  : "± --.-- Hz";
+            }
+
+            if (seismoEl) {
+              seismoEl.innerText =
+                data.seismobuild_frequency != null
+                  ? Number(data.seismobuild_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (measuredEl) {
+              measuredEl.innerText =
+                data.measured_frequency != null
+                  ? Number(data.measured_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (modeEl) {
+              modeEl.innerText =
+                data.matched_mode != null
+                  ? "Mode " + data.matched_mode
+                  : "--";
+            }
+
+            if (diffHzEl) {
+              diffHzEl.innerText =
+                data.frequency_difference != null
+                  ? `${data.frequency_difference >= 0 ? "+" : ""}${Number(data.frequency_difference).toFixed(2)} Hz`
+                  : "--.-- Hz";
+            }
+
+            if (diffPctEl) {
+              if (data.difference_percent != null) {
+                diffPctEl.innerText = `${data.difference_percent >= 0 ? "+" : ""}${Number(data.difference_percent).toFixed(2)} %`;
+
+                if (Math.abs(data.difference_percent) <= 5) {
+                  diffPctEl.className = "font-semibold text-emerald-600";
+                } else if (Math.abs(data.difference_percent) <= 10) {
+                  diffPctEl.className = "font-semibold text-amber-600";
+                } else {
+                  diffPctEl.className = "font-semibold text-red-600";
+                }
+              } else {
+                diffPctEl.innerText = "--.-- %";
+                diffPctEl.className = "font-semibold text-slate-500";
+              }
+            }
+
+            // ===== MODE SHAPE VISUALIZATION =====
+            const building = document.getElementById("building");
+            const shapeLabel = document.getElementById("mode-shape-label");
+
+            if (building && data.dominant_direction) {
+              // reset classes
+              building.className = "flex flex-col items-center gap-1";
+
+              const dir = data.dominant_direction.toLowerCase();
+
+              // apply mode class
+              building.classList.add("mode-" + dir);
+
+              if (shapeLabel) {
+                shapeLabel.innerText = data.dominant_direction;
+              }
+            }
+
+          } catch (err) {
+            console.error("Failed to update SHM predictive analytics:", err);
+          }
+        }
+
+        updateSHMPredictive();
+        setInterval(updateSHMPredictive, 5000);
+      </script>
+
+
+
+      <script>
+        function simulateLatency() {
+          const latencyEl = document.getElementById("latency-value");
+          if (!latencyEl) return;
+
+          // random value between 4 and 60
+          const value = Math.floor(Math.random() * (60 - 4 + 1)) + 4;
+
+          latencyEl.innerText = value + " ms";
+
+          // optional: color feedback
+          if (value <= 20) {
+            latencyEl.className = "text-lg font-semibold text-emerald-600";
+          } else if (value <= 40) {
+            latencyEl.className = "text-lg font-semibold text-amber-500";
+          } else {
+            latencyEl.className = "text-lg font-semibold text-red-500";
+          }
+        }
+
+        // update every 2 seconds (natural feel)
+        setInterval(simulateLatency, 2000);
+        simulateLatency();
+      </script>
+
+
+
+      <style>
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          background-color: #10b981;
+          border-radius: 9999px;
+          display: inline-block;
+          animation: breathe 2.5s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.7;
+          }
+
+          50% {
+            transform: scale(1.5);
+            opacity: 1;
+          }
+        }
+      </style>
+
+
+
+      <style>
+        .activity-bar {
+          height: 4px;
+          border-radius: 9999px;
+          background: linear-gradient(90deg,
+              rgba(16, 185, 129, 0.2) 0%,
+              rgba(16, 185, 129, 0.8) 50%,
+              rgba(16, 185, 129, 0.2) 100%);
+          background-size: 200% 100%;
+          animation: flowBar 3s ease-in-out infinite;
+        }
+
+        @keyframes flowBar {
+          0% {
+            background-position: 0% 50%;
+            transform: scaleX(0.95);
+            opacity: 0.7;
+          }
+
+          50% {
+            background-position: 100% 50%;
+            transform: scaleX(1);
+            opacity: 1;
+          }
+
+          100% {
+            background-position: 0% 50%;
+            transform: scaleX(0.95);
+            opacity: 0.7;
+          }
+        }
+      </style>
+
+      <style>
+        /* Ux = left-right */
+        .mode-ux {
+          animation: moveX 1.5s ease-in-out infinite;
+        }
+
+        /* Uy = front-back */
+        .mode-uy {
+          animation: moveY 1.5s ease-in-out infinite;
+        }
+
+        /* Uz = up-down */
+        .mode-uz {
+          animation: moveZ 1.5s ease-in-out infinite;
+        }
+
+        /* Rx = twisting */
+        .mode-rx {
+          animation: rotateX 1.5s ease-in-out infinite;
+        }
+
+        /* Ry */
+        .mode-ry {
+          animation: rotateY 1.5s ease-in-out infinite;
+        }
+
+        /* Rz */
+        .mode-rz {
+          animation: rotateZ 1.5s ease-in-out infinite;
+        }
+
+        /* KEYFRAMES */
+
+        @keyframes moveX {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(10px);
+          }
+        }
+
+        @keyframes moveY {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(10px);
+          }
+        }
+
+        @keyframes moveZ {
+
+          0%,
+          100% {
+            transform: scaleY(1);
+          }
+
+          50% {
+            transform: scaleY(1.2);
+          }
+        }
+
+        @keyframes rotateX {
+
+          0%,
+          100% {
+            transform: rotateX(0deg);
+          }
+
+          50% {
+            transform: rotateX(25deg);
+          }
+        }
+
+        @keyframes rotateY {
+
+          0%,
+          100% {
+            transform: rotateY(0deg);
+          }
+
+          50% {
+            transform: rotateY(25deg);
+          }
+        }
+
+        @keyframes rotateZ {
+
+          0%,
+          100% {
+            transform: rotateZ(0deg);
+          }
+
+          50% {
+            transform: rotateZ(15deg);
+          }
+        }
+      </style>
+
+      <style>
+        /* floors base */
+        .floor {
+          transition: all 0.3s ease;
+        }
+
+        /* ===================== */
+        /* Ux = Side sway */
+        /* ===================== */
+        .mode-ux .floor-1 {
+          animation: sway1 1.5s ease-in-out infinite;
+        }
+
+        .mode-ux .floor-2 {
+          animation: sway2 1.5s ease-in-out infinite;
+        }
+
+        .mode-ux .floor-3 {
+          animation: sway3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* Uy = vertical (simulate front/back) */
+        /* ===================== */
+        .mode-uy .floor-1 {
+          animation: lift1 1.5s ease-in-out infinite;
+        }
+
+        .mode-uy .floor-2 {
+          animation: lift2 1.5s ease-in-out infinite;
+        }
+
+        .mode-uy .floor-3 {
+          animation: lift3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* Rx = twisting */
+        /* ===================== */
+        .mode-rx .floor-1 {
+          animation: twist1 1.5s ease-in-out infinite;
+        }
+
+        .mode-rx .floor-2 {
+          animation: twist2 1.5s ease-in-out infinite;
+        }
+
+        .mode-rx .floor-3 {
+          animation: twist3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* KEYFRAMES */
+        /* ===================== */
+
+        /* sway (bigger movement on top floor) */
+        @keyframes sway1 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(4px);
+          }
+        }
+
+        @keyframes sway2 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(8px);
+          }
+        }
+
+        @keyframes sway3 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(12px);
+          }
+        }
+
+        /* vertical */
+        @keyframes lift1 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-2px);
+          }
+        }
+
+        @keyframes lift2 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+
+        @keyframes lift3 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-6px);
+          }
+        }
+
+        /* twist */
+        @keyframes twist1 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(2deg);
+          }
+        }
+
+        @keyframes twist2 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(-3deg);
+          }
+        }
+
+        @keyframes twist3 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(5deg);
+          }
+        }
+      </style>
+
+      <script>
+        async function updateSHMReport() {
+          try {
+            const response = await fetch("/api/shm/report/");
+            const data = await response.json();
+            console.log(data);
+
+            const stiffEl = document.getElementById("stiffness-score");
+            const driftEl = document.getElementById("drift-assessment");
+
+            if (stiffEl) {
+              if (data.stiffness_retention != null) {
+                stiffEl.innerText = data.stiffness_retention.toFixed(1) + " %";
+
+                // color logic
+                if (data.stiffness_retention >= 90) {
+                  stiffEl.className = "text-3xl font-bold text-emerald-600";
+                } else if (data.stiffness_retention >= 70) {
+                  stiffEl.className = "text-3xl font-bold text-amber-500";
+                } else {
+                  stiffEl.className = "text-3xl font-bold text-red-600";
+                }
+              } else {
+                stiffEl.innerText = "-- %";
+              }
+            }
+
+            if (driftEl) {
+              driftEl.innerText = data.drift_assessment || "No Data";
+
+              if (data.drift_assessment === "Within Allowable Limits") {
+                driftEl.className = "text-sm font-medium text-emerald-600";
+              } else if (data.drift_assessment === "Moderate Drift") {
+                driftEl.className = "text-sm font-medium text-amber-500";
+              } else {
+                driftEl.className = "text-sm font-medium text-red-600";
+              }
+            }
+
+          } catch (err) {
+            console.error("SHM report error:", err);
+          }
+        }
+
+        updateSHMReport();
+        setInterval(updateSHMReport, 5000);
+      </script>
+
+
+      <script>
+        async function refreshHistory() {
+          try {
+            const response = await fetch(window.location.href);
+            const html = await response.text();
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            const newHistory = doc.querySelector("#shm-history-container");
+            const currentHistory = document.querySelector("#shm-history-container");
+
+            if (newHistory && currentHistory) {
+              currentHistory.innerHTML = newHistory.innerHTML;
+            }
+
+          } catch (error) {
+            console.error("SHM History refresh failed:", error);
+          }
+        }
+
+        // ⏱ Refresh every 60 seconds (1 minute)
+        setInterval(refreshHistory, 60000);
+      </script>
+
+<script>
+function applyFilter() {
+  const from = document.querySelector('input[name="from_date"]').value;
+  const to = document.querySelector('input[name="to_date"]').value;
+  const classification = document.querySelector('select[name="classification"]').value;
+
+  const params = new URLSearchParams();
+
+  if (from) params.append('from_date', from);
+  if (to) params.append('to_date', to);
+  if (classification) params.append('classification', classification);
+
+  const url = `${window.location.pathname}?${params.toString()}`;
+
+  // 🔥 FETCH SAME PAGE (LIKE NFD)
+  fetch(url)
+    .then(res => res.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      const newHistory = doc.querySelector("#shm-history-container");
+      const currentHistory = document.querySelector("#shm-history-container");
+
+      if (newHistory && currentHistory) {
+        currentHistory.innerHTML = newHistory.innerHTML;
+      }
+    });
+}
+</script>
+
+
+
+
+<script>
+async function runSHMSearch() {
+    const datetime = document.getElementById("shm-datetime")?.value;
+    const duration = document.getElementById("shm-duration")?.value || 60;
+
+    if (!datetime) {
+        alert("Please select date & time");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/shm/search/?datetime=${encodeURIComponent(datetime)}&duration=${encodeURIComponent(duration)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            alert(data.error || "Search failed");
+            return;
+        }
+
+        // ===============================
+        // 🔥 SAFE SETTER FUNCTION
+        // ===============================
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = value;
+        };
+
+        // ===============================
+        // 🔥 CORE METRICS
+        // ===============================
+        setText("res-freq",
+            data.peak_frequency !== undefined
+                ? Number(data.peak_frequency).toFixed(2) + " Hz"
+                : "--.-- Hz"
+        );
+
+        setText("res-acc",
+            data.peak_acceleration !== undefined
+                ? Number(data.peak_acceleration).toFixed(4) + " g"
+                : "--.---- g"
+        );
+
+        // ===============================
+        // 🔥 SIGMA COLOR LOGIC
+        // ===============================
+        const sigmaEl = document.getElementById("res-sigma");
+        const sigmaText = data.sigma_status || "--";
+
+        if (sigmaEl) {
+            sigmaEl.innerText = sigmaText;
+
+            // reset classes
+            sigmaEl.classList.remove("text-emerald-600", "text-yellow-500", "text-red-600");
+
+            if (sigmaText === "Inside Safe Zone") {
+                sigmaEl.classList.add("text-emerald-600");
+            } else if (sigmaText === "Warning Zone") {
+                sigmaEl.classList.add("text-yellow-500");
+            } else if (sigmaText === "Unstable Zone") {
+                sigmaEl.classList.add("text-red-600");
+            }
+}
+
+        // ===============================
+        // 🔥 ENGINEERING
+        // ===============================
+        setText("res-residual",
+            data.residual_value !== undefined
+                ? Number(data.residual_value).toFixed(2) + " Hz"
+                : "--.-- Hz"
+        );
+
+        setText("res-stiffness",
+            data.stiffness !== undefined
+                ? Number(data.stiffness).toFixed(2) + " %"
+                : "-- %"
+        );
+
+       // ===============================
+      // 🔥 DRIFT COLOR LOGIC
+      // ===============================
+      const driftEl = document.getElementById("res-drift");
+      const driftText = data.drift || "--";
+
+      if (driftEl) {
+          driftEl.innerText = driftText;
+
+          // reset classes
+          driftEl.classList.remove("text-emerald-600", "text-yellow-500", "text-red-600");
+
+          if (driftText === "Within Allowable Limits") {
+              driftEl.classList.add("text-emerald-600");
+          } else if (driftText === "Moderate Drift") {
+              driftEl.classList.add("text-yellow-500");
+          } else if (driftText === "Excessive Drift") {
+              driftEl.classList.add("text-red-600");
+          }
+}
+
+        // ===============================
+        // 🔥 BASELINE
+        // ===============================
+        setText("res-base",
+            data.baseline_frequency !== undefined
+                ? Number(data.baseline_frequency).toFixed(2) + " Hz"
+                : "--.-- Hz"
+        );
+
+        setText("res-measured",
+            data.measured_frequency !== undefined
+                ? Number(data.measured_frequency).toFixed(2) + " Hz"
+                : "--.-- Hz"
+        );
+
+        setText("res-mode",
+            data.matched_mode ? "Mode " + data.matched_mode : "--"
+        );
+
+        setText("res-diffhz",
+            data.difference_hz !== undefined
+                ? Number(data.difference_hz).toFixed(2) + " Hz"
+                : "--.-- Hz"
+        );
+
+        setText("res-diffpct",
+            data.difference_percent !== undefined
+                ? Number(data.difference_percent).toFixed(2) + " %"
+                : "--.-- %"
+        );
+
+        console.log("SHM Search Success:", data);
+
+    } catch (err) {
+        console.error("SHM Search Error:", err);
+        alert("Search failed");
+    }
+}
+</script> 
+
+<script>
+function exportSHMPDF() {
+    const datetime = document.getElementById("shm-datetime")?.value;
+    const duration = document.getElementById("shm-duration")?.value || 60;
+
+    if (!datetime) {
+        alert("Select date & time first");
+        return;
+    }
+
+    const url = `/export/shm-search-pdf/?datetime=${encodeURIComponent(datetime)}&duration=${encodeURIComponent(duration)}`;
+    window.open(url, "_blank");
+}
+</script>
+
+
+
+
+  </main>
+</div>
+{% endblock %}

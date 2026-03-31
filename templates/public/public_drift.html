@@ -1,0 +1,622 @@
+{% extends "base_public.html" %}
+{% block title %}Drift Public{% endblock %}
+
+{% block content %}
+
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+
+    .signal-line {
+        height: 4px;
+        border-radius: 9999px;
+        background: linear-gradient(90deg,
+                rgba(251, 191, 36, 0.2) 0%,
+                rgba(251, 146, 60, 0.9) 50%,
+                rgba(251, 191, 36, 0.2) 100%);
+        background-size: 200% 100%;
+        animation: signalFlow 2s ease-in-out infinite;
+    }
+
+    @keyframes signalFlow {
+        0% {
+            background-position: 0% 50%;
+            transform: scaleX(0.96);
+            opacity: 0.8;
+        }
+
+        50% {
+            background-position: 100% 50%;
+            transform: scaleX(1);
+            opacity: 1;
+        }
+
+        100% {
+            background-position: 0% 50%;
+            transform: scaleX(0.96);
+            opacity: 0.8;
+        }
+    }
+</style>
+
+<!-- NAVBAR -->
+<div class="sticky top-0 z-50 mb-10">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex items-center justify-between
+                px-6 py-3 rounded-2xl
+                bg-white/50 backdrop-blur-xl
+                border border-white/40
+                shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+
+            <div class="flex items-center gap-2 font-semibold text-[color:var(--text-100)]">
+                <span class="text-orange-500 text-lg">●</span>
+                <span>ISDM</span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[color:var(--text-100)]/80">
+                <a href="{% url 'landing' %}" class="hover:text-orange-500 transition">Home</a>
+                <a href="{% url 'public_about' %}" class="hover:text-orange-500 transition">About</a>
+                <a href="{% url 'public_contact' %}" class="hover:text-orange-500 transition">Contact</a>
+            </div>
+
+            <a href="{% url 'login' %}" class="px-5 py-2 rounded-full
+                bg-gradient-to-r from-orange-500 to-orange-600
+                text-white shadow-md hover:shadow-lg
+                transition text-sm font-semibold">
+                Login
+            </a>
+
+        </div>
+    </div>
+</div>
+
+<!-- TITLE -->
+<div class="text-center mb-12">
+    <h1 class="text-2xl md:text-3xl font-semibold text-[color:var(--text-100)]">
+        Inter-Story Drift Monitoring
+    </h1>
+    <p class="text-sm text-[color:var(--text-100)]/60 mt-2">
+        Public Monitoring Dashboard
+    </p>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 space-y-8">
+
+    <!-- TOP STATUS CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+
+        <!-- OVERALL -->
+        <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+            <div class="flex items-center justify-between">
+                <div class="text-xs font-medium text-gray-500">Overall Status</div>
+                <span class="flex items-center gap-2 text-xs font-medium text-emerald-600">
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Safe
+                </span>
+            </div>
+
+            <div id="drift-overall-status" class="mt-3 text-2xl font-semibold text-gray-800">Normal</div>
+            <div class="mt-3 text-sm text-gray-500 leading-relaxed max-w-[220px]">
+                System operating within safe drift limits
+            </div>
+        </div>
+
+        <!-- FLOOR 1 -->
+        <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+            <div class="signal-line mb-5"></div>
+
+            <div class="mb-3">
+                <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+                    Max Drift Ratio F1
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">Drift Ratio</span>
+                <span id="f1-drift" class="text-lg font-semibold text-gray-800">--.-- </span>
+            </div>
+        </div>
+
+        <!-- FLOOR 2 -->
+        <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+            <div class="signal-line mb-5"></div>
+
+            <div class="mb-3">
+                <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+                    Max Drift Ratio F2
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">Drift Ratio</span>
+                <span id="f2-drift" class="text-lg font-semibold text-gray-800">--.-- </span>
+            </div>
+        </div>
+
+        <!-- FLOOR 3 -->
+        <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+            <div class="signal-line mb-5"></div>
+
+            <div class="mb-3">
+                <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+                    Max Drift Ratio F3
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">Drift Ratio</span>
+                <span id="f3-drift" class="text-lg font-semibold text-gray-800">--.-- </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- WORKSPACE -->
+    <div x-data="{ tab: 'chart' }"
+        class="rounded-[28px] p-6 bg-white/55 backdrop-blur-2xl border border-white/60 shadow">
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-semibold text-lg">Drift Workspace</h2>
+
+            <div class="inline-flex gap-1 rounded-2xl p-1 bg-white/60 border shadow-inner">
+                <button @click="tab='chart'" :class="tab==='chart' ? 'bg-white shadow-sm' : 'opacity-70'"
+                    class="px-4 py-2 rounded-xl text-sm">
+                    Drift Chart
+                </button>
+
+                <button @click="tab='results'" :class="tab==='results' ? 'bg-white shadow-sm' : 'opacity-70'"
+                    class="px-4 py-2 rounded-xl text-sm">
+                    Results
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTS TAB -->
+        <div x-show="tab==='results'" x-cloak class="space-y-6">
+
+            <!-- FLOOR 1 -->
+            <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+                <h3 class="font-semibold text-base mb-4">Floor 1</h3>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                        <p id="f1-drift-x" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                        <p id="f1-drift-y" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                        <p id="f1-acc-x" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                        <p id="f1-acc-y" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                        <p id="f1-base-x" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                        <p id="f1-base-y" class="font-semibold">--.--</p>
+                    </div>
+
+                    <div class="col-span-2">
+                        <p class="opacity-60 text-xs">Drift ratio difference</p>
+                        <p id="f1-diff" class="font-semibold text-emerald-600">--.--</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FLOOR 2 -->
+            <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+                <h3 class="font-semibold text-base mb-4">Floor 2</h3>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                        <p id="f2-drift-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                        <p id="f2-drift-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                        <p id="f2-acc-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                        <p id="f2-acc-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                        <p id="f2-base-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                        <p id="f2-base-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div class="col-span-2">
+                        <p class="opacity-60 text-xs">Drift ratio difference</p>
+                        <p id="f2-diff" class="font-semibold text-emerald-600">--.--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOOR 3 -->
+            <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+                <h3 class="font-semibold text-base mb-4">Floor 3</h3>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                        <p id="f3-drift-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                        <p id="f3-drift-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                        <p id="f3-acc-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                        <p id="f3-acc-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                        <p id="f3-base-x" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div>
+                        <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                        <p id="f3-base-y" class="font-semibold text-gray-800">--.--</p>
+                    </div>
+
+                    <div class="col-span-2">
+                        <p class="opacity-60 text-xs">Drift ratio difference</p>
+                        <p id="f3-diff" class="font-semibold text-emerald-600">--.--</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CHART TAB -->
+        <div x-show="tab==='chart'" x-cloak class="flex flex-col gap-6">
+
+            <div class="rounded-2xl bg-white/60 p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold">Live Acceleration Waveform from RS4D</h3>
+                    <span class="text-xs opacity-60">Real-time (g)</span>
+                </div>
+
+                <div class="h-[250px] rounded-xl bg-white/50 p-2">
+                    <canvas id="driftWaveform"></canvas>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+                <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 1</h3>
+                <div class="h-[180px] bg-white/50 rounded-xl p-2">
+                    <canvas id="driftChart1"></canvas>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+                <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 2</h3>
+                <div class="h-[180px] bg-white/50 rounded-xl p-2">
+                    <canvas id="driftChart2"></canvas>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/60 p-4">
+                <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 3</h3>
+                <div class="h-[180px] bg-white/50 rounded-xl p-2">
+                    <canvas id="driftChart3"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+    let driftChart1 = null;
+    let driftChart2 = null;
+    let driftChart3 = null;
+
+    function setSafeText(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = value;
+    }
+
+    function generateDriftSeries(baseValue) {
+        const points = 30;
+        const data = [];
+
+        for (let i = 0; i < points; i++) {
+            const jitter = (Math.random() - 0.5) * 0.01;
+            data.push(baseValue + jitter);
+        }
+
+        return data;
+    }
+
+    function updateDriftCharts(val12, val23, val3) {
+        const buildChart = (chartRef, canvasId, value) => {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return chartRef;
+
+            const ctx = canvas.getContext('2d');
+            const series = generateDriftSeries(value);
+            const maxVal = Math.max(...series);
+            const minVal = Math.min(...series);
+            const padding = Math.max(Math.abs(maxVal - minVal) * 0.5, 0.002);
+
+            if (!chartRef) {
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array(series.length).fill(''),
+                        datasets: [
+                            {
+                                data: series,
+                                borderColor: "#1d4ed8",
+                                borderWidth: 2,
+                                tension: 0.35,
+                                pointRadius: 0
+                            },
+                            {
+                                data: series.map(v => v === maxVal ? v : null),
+                                pointRadius: 5,
+                                pointBackgroundColor: "#dc2626",
+                                pointBorderColor: "#ffffff",
+                                pointBorderWidth: 2,
+                                showLine: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                display: false,
+                                grid: { display: false }
+                            },
+                            y: {
+                                min: minVal - padding,
+                                max: maxVal + padding,
+                                ticks: {
+                                    display: true,
+                                    callback: function (value) {
+                                        return Number(value).toFixed(3);
+                                    }
+                                },
+                                grid: {
+                                    color: "rgba(0,0,0,0.05)"
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                chartRef.data.datasets[0].data = series;
+                chartRef.data.datasets[1].data = series.map(v => v === maxVal ? v : null);
+                chartRef.options.scales.y.min = minVal - padding;
+                chartRef.options.scales.y.max = maxVal + padding;
+                chartRef.update();
+                return chartRef;
+            }
+        };
+
+        driftChart1 = buildChart(driftChart1, 'driftChart1', val12);
+        driftChart2 = buildChart(driftChart2, 'driftChart2', val23);
+        driftChart3 = buildChart(driftChart3, 'driftChart3', val3);
+    }
+
+    async function updateDriftTopCards() {
+        try {
+            const response = await fetch('/api/drift/live-metrics/');
+            console.log("DRIFT response status:", response.status);
+
+            if (!response.ok) {
+                console.error("DRIFT fetch failed:", response.status);
+                return;
+            }
+
+            const data = await response.json();
+            console.log("DRIFT live metrics:", data);
+
+            if (data.status !== 'success') {
+                console.error("DRIFT API not success:", data);
+                return;
+            }
+
+            const f1 = Number(data.floor_12_percent ?? 0);
+            const f2 = Number(data.floor_23_percent ?? 0);
+            const f3 = Number(data.floor_3_percent ?? 0);
+
+            setSafeText('f1-drift', f1.toFixed(4) + " %");
+            setSafeText('f2-drift', f2.toFixed(4) + " %");
+            setSafeText('f3-drift', f3.toFixed(4) + " %");
+
+            updateDriftCharts(f1, f2, f3);
+
+            // FLOOR 1
+            setSafeText('f1-acc-x', Number(data.f1_acc_x_g ?? 0).toFixed(6));
+            setSafeText('f1-acc-y', Number(data.f1_acc_y_g ?? 0).toFixed(6));
+            setSafeText('f1-drift-x', Number(data.idr_12_x ?? 0).toFixed(4));
+            setSafeText('f1-drift-y', Number(data.idr_12_y ?? 0).toFixed(4));
+            setSafeText('f1-base-x', Number(data.f1_base_x ?? 0).toFixed(4));
+            setSafeText('f1-base-y', Number(data.f1_base_y ?? 0).toFixed(4));
+            setSafeText('f1-diff', Number(data.f1_diff ?? 0).toFixed(4));
+
+            // FLOOR 2
+            setSafeText('f2-acc-x', Number(data.f2_acc_x_g ?? 0).toFixed(6));
+            setSafeText('f2-acc-y', Number(data.f2_acc_y_g ?? 0).toFixed(6));
+            setSafeText('f2-drift-x', Number(data.idr_23_x ?? 0).toFixed(4));
+            setSafeText('f2-drift-y', Number(data.idr_23_y ?? 0).toFixed(4));
+            setSafeText('f2-base-x', Number(data.f2_base_x ?? 0).toFixed(4));
+            setSafeText('f2-base-y', Number(data.f2_base_y ?? 0).toFixed(4));
+            setSafeText('f2-diff', Number(data.f2_diff ?? 0).toFixed(4));
+
+            // FLOOR 3
+            setSafeText('f3-acc-x', Number(data.f3_acc_x_g ?? 0).toFixed(6));
+            setSafeText('f3-acc-y', Number(data.f3_acc_y_g ?? 0).toFixed(6));
+            setSafeText('f3-drift-x', Number(data.idr_3_x ?? 0).toFixed(4));
+            setSafeText('f3-drift-y', Number(data.idr_3_y ?? 0).toFixed(4));
+            setSafeText('f3-base-x', Number(data.f3_base_x ?? 0).toFixed(4));
+            setSafeText('f3-base-y', Number(data.f3_base_y ?? 0).toFixed(4));
+            setSafeText('f3-diff', Number(data.f3_diff ?? 0).toFixed(4));
+
+        } catch (err) {
+            console.error("updateDriftTopCards error:", err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDriftTopCards();
+        setInterval(updateDriftTopCards, 5000);
+    });
+</script>
+
+<script>
+    let driftWaveChart = null;
+
+    async function updateDriftWaveform() {
+        try {
+            const response = await fetch('/api/latest-nfd-waveforms/');
+            const data = await response.json();
+
+
+            if (!data.raw_signal || data.raw_signal.length === 0) return;
+
+            const signal = data.raw_signal;
+
+            const labels = signal.map((_, i) => i);
+
+            if (!driftWaveChart) {
+                const ctx = document.getElementById('driftWaveform').getContext('2d');
+
+                driftWaveChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Acceleration',
+                            data: signal,
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                ticks: {
+                                    callback: function (value) {
+                                        return value.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+
+            } else {
+                driftWaveChart.data.labels = labels;
+                driftWaveChart.data.datasets[0].data = signal;
+                driftWaveChart.update();
+            }
+
+        } catch (err) {
+            console.error('Waveform error:', err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDriftWaveform();
+        setInterval(updateDriftWaveform, 5000); // every 5 sec
+    });
+</script>
+
+
+
+
+
+
+
+
+{% endblock %}

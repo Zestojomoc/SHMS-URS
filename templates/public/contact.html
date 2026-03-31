@@ -1,0 +1,123 @@
+{% extends "base_public.html" %}
+{% block title %}Contact{% endblock %}
+
+{% block content %}
+
+<!-- NAVBAR -->
+
+<div class="sticky top-0 z-50 mb-10">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-center justify-between
+                px-6 py-3 rounded-2xl
+                bg-white/50 backdrop-blur-xl
+                border border-white/40
+                shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+
+  <div class="flex items-center gap-2 font-semibold text-[color:var(--text-100)]">
+    <span class="text-orange-500 text-lg">●</span>
+    <span>SHMS</span>
+  </div>
+
+  <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[color:var(--text-100)]/80">
+    <a href="{% url 'landing' %}" class="hover:text-orange-500 transition">Home</a>
+    <a href="{% url 'public_about' %}" class="hover:text-orange-500 transition">About Us</a>
+    <a href="{% url 'public_contact' %}" class="text-orange-500 font-semibold">Contact</a>
+  </div>
+
+  <a href="{% url 'login' %}"
+     class="px-5 py-2 rounded-full
+            bg-gradient-to-r from-orange-500 to-orange-600
+            text-white shadow-md hover:shadow-lg
+            hover:-translate-y-[1px]
+            transition text-sm font-semibold">
+    Login
+  </a>
+
+</div>
+
+  </div>
+</div>
+
+<!-- HERO -->
+
+<div class="text-center mb-12">
+  <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-[color:var(--text-100)]">
+    Contact Information
+  </h1>
+  <p class="mt-2 text-sm text-[color:var(--text-100)]/60">
+    Reach out to each system team
+  </p>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 space-y-10">
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+{% for group, info in contacts.items %}
+
+<div class="rounded-[24px] p-6
+            bg-white/40 backdrop-blur-2xl
+            border border-white/30
+            shadow-[0_25px_70px_rgba(0,0,0,0.10)]
+            hover:shadow-[0_30px_80px_rgba(0,0,0,0.15)]
+            hover:-translate-y-[3px]
+            transition-all duration-300">
+
+  <!-- ACCENT LINE -->
+  <div class="h-[3px] w-16 mb-4 rounded-full bg-gradient-to-r from-orange-500 to-orange-300"></div>
+
+  <!-- TITLE -->
+  <h2 class="text-lg font-semibold text-[color:var(--text-100)] mb-4">
+    {{ group }}
+  </h2>
+
+  <!-- CONTENT -->
+  <div class="space-y-3 text-sm text-[color:var(--text-100)]/80">
+
+    {% if info.name %}
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5.121 17.804A9 9 0 1118.88 17.804M15 11a3 3 0 11-6 0"/>
+      </svg>
+      <span class="font-medium">Name:</span>
+      <span>{{ info.name }}</span>
+    </div>
+    {% endif %}
+
+    {% if info.email %}
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 12H8m0 0l4-4m-4 4l4 4"/>
+      </svg>
+      <span class="font-medium">Email:</span>
+      <a href="mailto:{{ info.email }}" class="text-orange-500 hover:underline">
+        {{ info.email }}
+      </a>
+    </div>
+    {% endif %}
+
+    {% if info.phone %}
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 5h2l3 7-1.5 1.5a11 11 0 005 5L13 17l7 3v2a1 1 0 01-1 1A19 19 0 013 5z"/>
+      </svg>
+      <span class="font-medium">Phone:</span>
+      <span>{{ info.phone }}</span>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endfor %}
+
+
+  </div>
+
+</div>
+
+{% endblock %}

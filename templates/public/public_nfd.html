@@ -1,0 +1,675 @@
+{% extends "base_public.html" %}
+{% block title %}Public NFD Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+  [x-cloak] { display: none !important; }
+</style>
+
+<div
+  x-data="{ tab: 'identify' }"
+  class="max-w-7xl mx-auto px-4"
+>
+
+  <!-- NAVBAR -->
+
+
+<div class="sticky top-0 z-50 mb-10">
+
+  <div class="max-w-6xl mx-auto px-4">
+
+
+<div class="flex items-center justify-between
+            px-6 py-3 rounded-2xl
+            bg-white/50 backdrop-blur-xl
+            border border-white/40
+            shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+
+  <!-- LEFT: BRAND -->
+  <div class="flex items-center gap-2 font-semibold text-[color:var(--text-100)]">
+    <span class="text-orange-500 text-lg">●</span>
+    <span>NFD </span>
+  </div>
+
+  <!-- CENTER: NAV LINKS -->
+  <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[color:var(--text-100)]/80">
+
+    <a href="{% url 'landing' %}" class="hover:text-orange-500 transition" font-semibold>
+      Home
+    </a>
+
+    <a href="{% url 'public_about' %}" class="hover:text-orange-500 transition">
+    About Us
+    </a>
+    <a href="{% url 'public_contact' %}" class="hover:text-orange-500 transition">
+    Contact
+    </a>
+
+  </div>
+
+  <!-- RIGHT: LOGIN -->
+  <div class="flex items-center">
+
+    <a href="{% url 'login' %}"
+       class="px-5 py-2 rounded-full
+              bg-gradient-to-r from-orange-500 to-orange-600
+              text-white shadow-md hover:shadow-lg
+              hover:-translate-y-[1px]
+              transition text-sm font-semibold">
+      Login
+    </a>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+</div>
+
+
+
+  <!-- Header -->
+
+ <div class="relative text-center mb-12">
+
+  <!-- glow background -->
+  <div class="absolute inset-0 flex justify-center -z-10">
+    <div class="w-[500px] h-[120px] bg-orange-300/30 blur-3xl rounded-full"></div>
+  </div>
+
+  <h1 class="text-2xl md:text-4xl font-extrabold tracking-tight text-[color:var(--text-100)]">
+    Natural Frequency & Damping Ratio Identification
+  </h1>
+
+  <p class="mt-3 text-sm md:text-base text-[color:var(--text-100)]/60">
+    Public Monitoring Dashboard
+  </p>
+
+
+</div>
+
+  <!-- TOP STATUS CARDS -->
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+
+<div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+  <div class="flex items-center justify-between">
+    <div class="text-sm font-medium text-[color:var(--text-100)]/70">Analysis Status</div>
+    <span class="inline-flex items-center gap-2 text-xs opacity-80"></span>
+  </div>
+  <div id="status-card" class="mt-3 text-2xl font-bold text-green-600">
+    Idle
+  </div>
+  <div class="mt-3 text-xs opacity-70">Collecting vibration data...</div>
+</div>
+
+<div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+  <div class="flex items-center justify-between">
+    <div class="text-sm font-medium text-[color:var(--text-100)]/70">Dominant Frequency</div>
+    <span class="inline-flex items-center gap-2 text-xs opacity-80">
+      <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+      Hz
+    </span>
+  </div>
+  <div id="freq-card" class="mt-3 text-2xl font-bold text-[color:var(--text-100)]">
+    {% if latest_result %}
+      {{ latest_result.dominant_frequency|floatformat:3 }} Hz
+    {% else %}
+      --.-- Hz
+    {% endif %}
+  </div>
+  <div class="mt-3 text-xs opacity-70">Dominant Frequency from FDD</div>
+</div>
+
+<div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+  <div class="flex items-center justify-between">
+    <div class="text-sm font-medium text-[color:var(--text-100)]/70">Damping Ratio</div>
+    <span class="inline-flex items-center gap-2 text-xs opacity-80">
+      <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+      %
+    </span>
+  </div>
+  <div id="damping-card" class="mt-3 text-2xl font-bold text-[color:var(--text-100)]">--.--</div>
+  <div class="mt-3 text-xs opacity-70">Calculated using SSI</div>
+</div>
+
+
+  </div>
+
+  <!-- WORKSPACE CONTAINER -->
+
+  <div class="rounded-[28px] p-6 bg-white/55 backdrop-blur-2xl border border-white/60 shadow-[0_18px_60px_rgba(139,69,19,0.15)]">
+
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div>
+    <h2 class="font-semibold text-lg text-[color:var(--text-100)]">NFD Workspace</h2>
+    <p class="text-xs opacity-70 mt-1">Filtering • Spectrum • Results</p>
+  </div>
+
+  <div class="inline-flex items-center gap-1 rounded-2xl p-1 bg-white/60 border border-white/70 shadow-inner">
+    <button type="button" @click="tab='identify'"
+      class="px-3 py-2 rounded-xl text-sm font-medium transition"
+      :class="tab==='identify' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+      Filtering
+    </button>
+    <button type="button" @click="tab='fft'"
+      class="px-3 py-2 rounded-xl text-sm font-medium transition"
+      :class="tab==='fft' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+      FDD
+    </button>
+    <button type="button" @click="tab='results'"
+      class="px-3 py-2 rounded-xl text-sm font-medium transition"
+      :class="tab==='results' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+      Results
+    </button>
+  </div>
+</div>
+
+<div class="mt-6 relative h-[460px]">
+  <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden">
+
+    <!-- FILTERING -->
+    <section x-show="tab==='identify'" x-cloak class="absolute inset-0">
+      <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+        <div class="text-sm font-semibold">Filtering Overview</div>
+        <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+          <span class="font-medium">Ready for FDD Analysis</span>
+        </div>
+      </div>
+
+      <div class="h-[calc(560px-48px)] p-4 flex flex-col gap-3">
+
+        <div class="rounded-2xl bg-white/55 border border-white/70 px-3 py-2">
+          <div class="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-100)]/70">
+            <span class="px-2.5 py-1 rounded-full bg-white/80 border border-white/80">Raw Data</span>
+            <span>→</span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Detrend</span>
+            <span>→</span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Bandpass</span>
+            <span>→</span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Window</span>
+            <span>→</span>
+            <span class="px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-600 font-medium">
+              FDD Ready
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+
+          <div class="rounded-2xl bg-white/50 border border-white/50 p-3 h-[150px] flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-[11px] font-semibold text-[color:var(--text-100)]/80">Raw Signal</p>
+              <span class="text-[10px] text-[color:var(--text-100)]/50">Input</span>
+            </div>
+            <div class="h-[110px] w-full rounded-xl bg-white/45 border border-white/60">
+              <canvas id="rawSignal" class="w-full h-full"></canvas>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white/50 border border-white/50 p-3 h-[150px] flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-[11px] font-semibold text-[color:var(--text-100)]/80">Filtered Signal</p>
+              <span class="text-[10px] text-[color:var(--text-100)]/50">Output</span>
+            </div>
+            <div class="h-[110px] w-full rounded-xl bg-white/45 border border-white/60">
+              <canvas id="filteredSignal" class="w-full h-full"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-10">
+
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-green-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Sampling Rate</p>
+              <p id="sampling-rate-card" class="text-sm font-semibold">-- Hz</p>
+            </div>
+
+            <div class="bg-amber-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Window</p>
+              <p class="text-sm font-semibold">60 sec</p>
+            </div>
+
+            <div class="bg-blue-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Overlap</p>
+              <p class="text-sm font-semibold">50%</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-purple-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Detrend</p>
+              <p class="text-sm font-semibold text-green-600">ON</p>
+            </div>
+
+            <div class="bg-orange-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Bandpass</p>
+              <p class="text-sm font-semibold">0.5–20 Hz</p>
+            </div>
+
+            <div class="bg-blue-200 rounded-xl p-5">
+              <p class="text-[10px] text-black-400">Window Type</p>
+              <p class="text-sm font-semibold">Hann</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FDD -->
+    <section x-show="tab==='fft'" x-cloak class="absolute inset-0">
+      <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+        <div class="text-sm font-semibold">FDD Spectrum View</div>
+        <div class="text-xs opacity-70">Frequency Domain</div>
+      </div>
+      <div class="h-[510px] w-full p-2">
+        <canvas id="fftChart"></canvas>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section x-show="tab==='results'" x-cloak class="absolute inset-0">
+      <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+        <div class="text-sm font-semibold">Computed Results</div>
+        <div class="text-xs opacity-70">Modes</div>
+      </div>
+
+      <div class="p-4 space-y-3 text-sm h-[calc(560px-48px)] overflow-auto">
+        <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+          <span class="opacity-80">Dominant Frequency (f₁)</span>
+          <span id="dominant-frequency" class="text-xs opacity-70">
+            {% if latest_result %}
+              {{ latest_result.dominant_frequency|floatformat:3 }} Hz
+            {% else %}
+              --.-- Hz
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+          <span class="opacity-80">Damping Ratio (ζ)</span>
+          <span id="damping-result" class="text-xs opacity-70">-- %</span>
+        </div>
+
+        <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+          <span class="opacity-80">Method</span>
+          <span class="text-xs opacity-70">FDD / SSI</span>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-xs font-semibold uppercase opacity-60 mb-2">
+            Baseline Comparison (ETABS Reference)
+          </div>
+
+          <div class="rounded-xl p-3 bg-white/60 border border-white/80 space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="opacity-80">Analytical Frequency (ETABS)</span>
+              <span id="etabs-frequency" class="text-xs opacity-70">--.-- Hz</span>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="opacity-80">Measured Frequency (OMA)</span>
+              <span id="measured-frequency" class="text-xs opacity-70">--.-- Hz</span>
+            </div>
+
+            <div class="flex items-center justify-between py-2">
+              <span class="text-gray-600">Matched Mode</span>
+              <span id="baselineMatchedMode" class="font-medium text-gray-800">--</span>
+            </div>
+
+            <div class="flex items-center justify-between py-2">
+              <span class="text-gray-600">Frequency Difference</span>
+              <span id="baselineDiffHz" class="font-medium text-gray-800">--.-- Hz</span>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="opacity-80">Percentage Difference</span>
+              <span id="difference-percent" class="text-xs font-medium text-emerald-600">--.-- %</span>
+            </div>
+
+            
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+
+<script>
+async function updateFrequency() {
+    try {
+        const response = await fetch("/api/latest-frequency/");
+        const data = await response.json();
+
+        if (data.frequency !== null) {
+            document.getElementById("dominant-frequency").innerText = data.frequency;
+        }
+
+    } catch (err) {
+        console.error("Failed to fetch frequency", err);
+    }
+}
+
+setInterval(updateFrequency, 3000);
+</script>
+
+<!-- WAVEFORM DISPLAYYYYYYYYY -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let fftChartInstance = null;
+
+function updateFFTChart(frequencies, amplitudes, dominantFrequency = null) {
+    const canvas = document.getElementById("fftChart");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    const safeFreqs = Array.isArray(frequencies) ? frequencies : [];
+    const safeAmps = Array.isArray(amplitudes) ? amplitudes : [];
+
+    if (!safeFreqs.length || !safeAmps.length) {
+        if (fftChartInstance) {
+            fftChartInstance.destroy();
+            fftChartInstance = null;
+        }
+
+        fftChartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "FDD Singular Value",
+                    data: [],
+                    borderColor: "#f97316",
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Frequency (Hz)"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Singular Value"
+                        }
+                    }
+                }
+            }
+        });
+
+        return;
+    }
+
+    let markerData = [];
+    if (dominantFrequency !== null && dominantFrequency !== undefined) {
+        const maxAmp = Math.max(...safeAmps, 0);
+        markerData = safeFreqs.map((f) => {
+            return Math.abs(Number(f) - Number(dominantFrequency)) < 1e-6 ? maxAmp : null;
+        });
+
+        if (!markerData.some(v => v !== null)) {
+            let closestIndex = 0;
+            let minDiff = Infinity;
+
+            safeFreqs.forEach((f, i) => {
+                const diff = Math.abs(Number(f) - Number(dominantFrequency));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = i;
+                }
+            });
+
+            markerData = safeFreqs.map((_, i) => i === closestIndex ? maxAmp : null);
+        }
+    }
+
+    if (fftChartInstance) {
+        fftChartInstance.destroy();
+    }
+
+    fftChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: safeFreqs,
+            datasets: [
+                {
+                    label: "FDD Singular Value",
+                    data: safeAmps,
+                    borderColor: "#f97316",
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: "Dominant Frequency",
+                    data: markerData,
+                    borderColor: "#16a34a",
+                    backgroundColor: "#16a34a",
+                    pointRadius: 4,
+                    pointHoverRadius: 5,
+                    showLine: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: { display: true }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: "Frequency (Hz)"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "Singular Value"
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function loadNFD() {
+    const response = await fetch("/api/latest-nfd/");
+    const data = await response.json();
+
+    // Dominant Frequency Card
+    document.getElementById("freq-card").innerText =
+        Number(data.dominant_frequency).toFixed(3) + " Hz";
+
+   // Damping Ratio Card
+const dampingTop = document.getElementById("damping-card");
+const dampingResult = document.getElementById("damping-result");
+
+if (data.damping_ratio !== null && data.damping_ratio !== undefined) {
+    const value = (Number(data.damping_ratio) * 100).toFixed(2) + " %";
+
+    if (dampingTop) dampingTop.innerText = value;
+    if (dampingResult) dampingResult.innerText = value;
+} else {
+    if (dampingTop) dampingTop.innerText = "N/A";
+    if (dampingResult) dampingResult.innerText = "N/A";
+}
+
+    // Status Card
+    const statusCard = document.getElementById("status-card");
+const freq = Number(data.dominant_frequency);
+
+if (!isNaN(freq)) {
+
+    if (freq >= 0.5 && freq <= 15) {
+        statusCard.innerText = "Normal";
+        statusCard.className = "mt-3 text-2xl font-bold text-green-600";
+    }
+
+    else if (freq >= 16 && freq <= 20) {
+        statusCard.innerText = "Alert";
+        statusCard.className = "mt-3 text-2xl font-bold text-yellow-500";
+    }
+
+    else if (freq > 20) {
+        statusCard.innerText = "Danger";
+        statusCard.className = "mt-3 text-2xl font-bold text-red-600";
+    }
+
+    else {
+        statusCard.innerText = "Monitoring";
+        statusCard.className = "mt-3 text-2xl font-bold text-gray-500";
+    }
+
+}
+
+    // FFT Chart
+    updateFFTChart(
+    data.fft_frequencies,
+    data.fft_amplitudes,
+    data.dominant_frequency
+);
+}
+
+loadNFD();
+setInterval(loadNFD, 5000);
+async function updateBaselineComparison() {
+    const response = await fetch("/api/nfd/latest/");
+    const data = await response.json();
+
+    const etabs = data.etabs_frequency;
+    const measured = data.dominant_frequency;
+    const diff = data.difference_percent;
+
+    document.getElementById("etabs-frequency").textContent =
+        etabs !== null && etabs !== undefined ? Number(etabs).toFixed(3) + " Hz" : "--.-- Hz";
+
+    document.getElementById("measured-frequency").textContent =
+        measured !== null && measured !== undefined ? Number(measured).toFixed(3) + " Hz" : "--.-- Hz";
+
+    document.getElementById("difference-percent").textContent =
+        diff !== null && diff !== undefined ? Number(diff).toFixed(2) + " %" : "--.-- %";
+    document.getElementById("baselineMatchedMode").textContent =
+        data.matched_mode_number ? `Mode ${data.matched_mode_number}` : "--";
+
+     document.getElementById("baselineDiffHz").textContent =
+        data.difference_hz !== null && data.difference_hz !== undefined
+        ? `${Number(data.difference_hz).toFixed(3)} Hz`
+        : "--.-- Hz";
+}
+
+updateBaselineComparison();
+setInterval(updateBaselineComparison, 5000);
+
+</script>
+
+
+
+<script>
+function drawSignal(canvasId, samples, color) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!Array.isArray(samples) || samples.length === 0) {
+        return;
+    }
+
+    const minVal = Math.min(...samples);
+    const maxVal = Math.max(...samples);
+    const range = (maxVal - minVal) || 1;
+
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+
+    samples.forEach((value, index) => {
+        const x = (index / (samples.length - 1)) * canvas.width;
+        const y = canvas.height - (((value - minVal) / range) * canvas.height);
+
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+}
+
+async function loadWaveforms() {
+    try {
+        const response = await fetch("/api/latest-nfd-waveforms/");
+        const data = await response.json();
+
+        drawSignal("rawSignal", data.raw_signal, "#9ca3af");
+        drawSignal("filteredSignal", data.filtered_signal, "#10b981");
+
+        const samplingRateCard = document.getElementById("sampling-rate-card");
+        if (samplingRateCard && data.sampling_rate !== null && data.sampling_rate !== undefined) {
+            samplingRateCard.innerText = Number(data.sampling_rate).toFixed(0) + " Hz";
+        }
+    } catch (err) {
+        console.error("Failed to fetch waveform data", err);
+    }
+}
+
+window.addEventListener("load", () => {
+    loadWaveforms();
+    setInterval(loadWaveforms, 5000);
+});
+
+window.addEventListener("resize", loadWaveforms);
+</script>
+
+
+
+
+
+
+
+{% endblock %}

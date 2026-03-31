@@ -1,0 +1,1454 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}NFD Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+  [x-cloak] { display: none !important; }
+</style>
+
+
+<div
+  x-data="{
+  page: localStorage.getItem('nfdPage') || 'dashboard',
+  tab: localStorage.getItem('nfdTab') || 'identify',
+  advisoryTab: localStorage.getItem('nfdAdvisoryTab') || 'engineering',
+  alertLevel: 'green',
+
+  setPage(p) {
+    this.page = p
+    localStorage.setItem('nfdPage', p)
+  },
+  setTab(t) {
+    this.tab = t
+    localStorage.setItem('nfdTab', t)
+  },
+  setAdvisoryTab(t) {
+    this.advisoryTab = t
+    localStorage.setItem('nfdAdvisoryTab', t)
+  }
+}"
+
+  class="flex h-full gap-6 p-6 w-full"
+>
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 flex-shrink-0 rounded-[26px] p-6
+                bg-white/55 backdrop-blur-2xl
+                border border-white/60
+                shadow-[0_18px_60px_rgba(139,69,19,0.18)]
+                flex flex-col">
+
+    <div class="mb-6">
+      <h2 class="text-lg font-bold text-[color:var(--text-100)]">NFD Admin</h2>
+      <p class="text-xs opacity-70">Natural Frequency & Damping</p>
+    </div>
+
+    <!-- NAV -->
+    <nav class="space-y-2 text-sm">
+
+      <!-- Dashboard -->
+      <div
+        role="button"
+        tabindex="0"
+        @click="setPage('dashboard')"
+        @keydown.enter="setPage('dashboard')"
+        :class="page==='dashboard'
+          ? 'bg-[linear-gradient(90deg,var(--primary-100),var(--primary-200))] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Dashboard
+      </div>
+
+      <!-- Search -->
+      <div
+        role="button"
+        tabindex="0"
+        @click="setPage('search')"
+        @keydown.enter="setPage('search')"
+        :class="page==='search'
+          ? 'bg-[linear-gradient(90deg,var(--primary-100),var(--primary-200))] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Search
+      </div>
+
+      <!-- Advisory -->
+      <div
+        role="button"
+        tabindex="0"
+        @click="setPage('advisory')"
+        @keydown.enter="page='advisory'"
+        :class="page==='advisory'
+          ? 'bg-[linear-gradient(90deg,var(--primary-100),var(--primary-200))] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Advisory
+      </div>
+
+      <!-- History -->
+      <div
+        role="button"
+        tabindex="0"
+        @click="setPage('history')"
+        @keydown.enter="page='history'"
+        :class="page==='history'
+          ? 'bg-[linear-gradient(90deg,var(--primary-100),var(--primary-200))] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        History
+      </div>
+
+      <!-- About -->
+      <div
+        role="button"
+        tabindex="0"
+        @click="setPage('about')"
+        @keydown.enter="page='about'"
+        :class="page==='about'
+          ? 'bg-[linear-gradient(90deg,var(--primary-100),var(--primary-200))] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        About
+      </div>
+
+    </nav>
+
+    <!-- Logout -->
+    <div class="mt-auto pt-6">
+      <a href="{% url 'logout' %}"
+         class="block text-center px-4 py-3 rounded-2xl
+                bg-[linear-gradient(90deg,var(--accent-100),var(--primary-300))]
+                text-white font-semibold shadow hover:opacity-90 transition">
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN eto wrapper -->
+  <main class="flex-1 overflow-y-auto space-y-6 pb-10">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-[color:var(--text-100)]">
+        DASHBOARD
+      </h1>
+      <p class="text-sm opacity-70 mt-1">
+        Natural Frequency & Damping Ratio Identification
+      </p>
+    </div>
+
+    <!-- TOP STATUS CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">Analysis Status</div>
+          <span class="inline-flex items-center gap-2 text-xs opacity-80">
+            
+          </span>
+        </div>
+        <div id="status-card" class="mt-3 text-2xl font-bold text-green-600">
+         Idle
+       </div>
+        <div class="mt-3 text-xs opacity-70">Collecting vibration data...</div>
+      </div>
+      
+
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">Dominant Frequency</div>
+          <span class="inline-flex items-center gap-2 text-xs opacity-80">
+            <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+            Hz
+          </span>
+        </div>
+        <div id="freq-card" class="mt-3 text-2xl font-bold text-[color:var(--text-100)]">
+        {% if latest_result %}
+        {{ latest_result.dominant_frequency|floatformat:3 }}
+        {% else %}
+         --.--
+        {% endif %}
+        </div>
+        <div class="mt-3 text-xs opacity-70">Dominant Frequency from FDD</div>
+      </div>
+
+      <div class="rounded-[22px] p-6 bg-white/60 backdrop-blur border border-white/70 shadow-[0_14px_45px_rgba(139,69,19,0.10)]">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium text-[color:var(--text-100)]/70">Damping Ratio</div>
+          <span class="inline-flex items-center gap-2 text-xs opacity-80">
+            <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+            %
+          </span>
+        </div>
+    <!-- legit -->
+        <div id="damping-card" class="mt-3 text-2xl font-bold text-[color:var(--text-100)]">--.--</div>
+        <div class="mt-3 text-xs opacity-70">Calculated using SSI</div>
+      </div>
+
+    </div>
+    <!-- WORKSPACE CONTAINER -->
+    <div class="rounded-[28px] p-6 bg-white/55 backdrop-blur-2xl border border-white/60
+                shadow-[0_18px_60px_rgba(139,69,19,0.15)]">
+
+      
+      <!-- PAGE: DASHBOARD -->
+      
+      <div x-show="page==='dashboard'" x-cloak>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">NFD Workspace</h2>
+            <p class="text-xs opacity-70 mt-1">Filtering • Spectrum • Results</p>
+          </div>
+
+          <div class="inline-flex items-center gap-1 rounded-2xl p-1 bg-white/60 border border-white/70 shadow-inner">
+            <button type="button" @click="tab='identify'"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition" 
+              :class="tab==='identify' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+              Filtering
+            </button>
+            <button type="button" @click="tab='fft'"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition"
+              :class="tab==='fft' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+              FDD
+            </button>
+            <button type="button" @click="tab='results'"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition"
+              :class="tab==='results' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+              Results
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6 relative h-[360px]">
+          <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden">
+
+            <!-- filtering -->
+            <section x-show="tab==='identify'" x-cloak class="absolute inset-0">
+  <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+    <div class="text-sm font-semibold">Filtering Overview</div>
+    <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+    <span class="font-medium">Ready for FDD Analysis</span>
+</div>
+  </div>
+
+  <div class="h-[calc(360px-48px)] p-4 flex flex-col gap-3">
+
+    <!-- Top: processing pipeline -->
+    <div class="rounded-2xl bg-white/55 border border-white/70 px-3 py-2">
+      <div class="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-100)]/70">
+        <span class="px-2.5 py-1 rounded-full bg-white/80 border border-white/80">Raw Data</span>
+        <span>→</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Detrend</span>
+        <span>→</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Bandpass</span>
+        <span>→</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">Window</span>
+        <span>→</span>
+        <span class="px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-600 font-medium">
+    FDD Ready
+</span>
+      </div>
+    </div>
+
+    <!-- Middle: waveform cards -->
+    <div class="grid grid-cols-2 gap-3">
+
+  <!-- RAW SIGNAL -->
+  <div class="rounded-2xl bg-white/50 border border-white/70 p-3 h-[105px] flex flex-col">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-[11px] font-semibold text-[color:var(--text-100)]/80">Raw Signal</p>
+      <span class="text-[10px] text-[color:var(--text-100)]/50">Input</span>
+    </div>
+    <div class="h-[70px] w-full rounded-xl bg-white/45 border border-white/60">
+      <canvas id="rawSignal" class="w-full h-full"></canvas>
+    </div>
+  </div>
+
+  <!-- FILTERED SIGNAL -->
+  <div class="rounded-2xl bg-white/50 border border-white/70 p-3 h-[105px] flex flex-col">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-[11px] font-semibold text-[color:var(--text-100)]/80">Filtered Signal</p>
+      <span class="text-[10px] text-[color:var(--text-100)]/50">Output</span>
+    </div>
+    <div class="h-[70px] w-full rounded-xl bg-white/45 border border-white/60">
+      <canvas id="filteredSignal" class="w-full h-full"></canvas>
+    </div>
+  </div>
+
+</div>
+
+    
+    <!-- Bottom: parameter cards -->
+<div class="grid grid-cols-2 gap-2 mt-2">
+
+    <!-- LEFT SIDE (RAW SIGNAL) -->
+    <div class="grid grid-cols-3 gap-3">
+        <div class="bg-green-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Sampling Rate</p>
+            <p id="sampling-rate-card" class="text-sm font-semibold">-- Hz</p>
+        </div>
+
+        <div class="bg-amber-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Window</p>
+            <p class="text-sm font-semibold">60 sec</p>
+        </div>
+
+        <div class="bg-blue-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Overlap</p>
+            <p class="text-sm font-semibold">50%</p>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDE (FILTERED SIGNAL) -->
+    <div class="grid grid-cols-3 gap-3">
+        <div class="bg-purple-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Detrend</p>
+            <p class="text-sm font-semibold text-green-600">ON</p>
+        </div>
+
+        <div class="bg-orange-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Bandpass</p>
+            <p class="text-sm font-semibold">0.5–20 Hz</p>
+        </div>
+
+        <div class="bg-blue-200 rounded-xl p-5">
+            <p class="text-[10px] text-black-400">Window Type</p>
+            <p class="text-sm font-semibold">Hann</p>
+        </div>
+    </div>
+
+</div>
+
+    
+</section>
+
+            <!-- FFT -->
+            <section x-show="tab==='fft'" x-cloak class="absolute inset-0">
+              <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+                <div class="text-sm font-semibold">FDD Spectrum View</div>
+                <div class="text-xs opacity-70">Frequency Domain</div>
+              </div>
+              <div class="h-[400px] w-full">
+                <canvas id="fftChart"></canvas>
+              </div>
+            </section>
+
+            <!-- Results -->
+            <section x-show="tab==='results'" x-cloak class="absolute inset-0">
+              <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+                <div class="text-sm font-semibold">Computed Results (Placeholder)</div>
+                <div class="text-xs opacity-70">Modes</div>
+              </div>
+
+              <div class="p-4 space-y-3 text-sm h-[calc(360px-48px)] overflow-auto">
+                <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+                  <span class="opacity-80">Dominant Frequency (f₁)</span>
+
+                  <span id="dominant-frequency" class="text-xs opacity-70">
+                  {% if latest_result %}
+                  {{ latest_result.dominant_frequency|floatformat:3 }} Hz
+                  {% else %}
+                   --.-- Hz
+                 {% endif %}
+                    </span>
+                </div>
+                <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+                  <span class="opacity-80">Damping Ratio (ζ)</span>
+                  <span id="damping-result" class="text-xs opacity-70">-- %</span>
+                </div>
+                <div class="rounded-xl p-3 bg-white/70 border border-white/80 flex items-center justify-between">
+                  <span class="opacity-80">Method</span>
+                  <span class="text-xs opacity-70">FDD / SSI</span>
+                </div>
+
+                <!-- BASELINE COMPARISON -->
+                <div class="mt-4">
+                  <div class="text-xs font-semibold uppercase opacity-60 mb-2">
+                    Baseline Comparison (ETABS Reference)
+                  </div>
+
+                  <div class="rounded-xl p-3 bg-white/60 border border-white/80 space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="opacity-80">Analytical Frequency (ETABS)</span>
+                      <span id="etabs-frequency" class="text-xs opacity-70">--.-- Hz</span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="opacity-80">Measured Frequency (OMA)</span>
+                      <span id="measured-frequency" class="text-xs opacity-70">--.-- Hz</span>
+                    </div> 
+                    <div class="flex items-center justify-between py-2">
+                      <span class="text-gray-600">Matched Mode</span>
+                      <span id="baselineMatchedMode" class="font-medium text-gray-800">--</span>
+                    </div>
+
+                    <div class="flex items-center justify-between py-2">
+                      <span class="text-gray-600">Frequency Difference</span>
+                      <span id="baselineDiffHz" class="font-medium text-gray-800">--.-- Hz</span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="opacity-80">Difference</span>
+                      <span id="difference-percent" class="text-xs font-medium text-emerald-600">--.-- %</span>
+                    </div>
+
+                    <div class="pt-2 text-xs opacity-60">
+                      Minor variation is expected due to ambient excitation and modeling assumptions.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+
+
+
+            <!-- PAGE: SEARCH -->
+      <div x-show="page==='search'" x-cloak>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+          <!-- LEFT: TITLE -->
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Search Analysis</h2>
+            <p class="text-xs opacity-70 mt-1">
+              Find and analyze vibration data using custom date, time, and duration
+            </p>
+          </div>
+
+          <!-- RIGHT: ACTION BUTTON -->
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="exportSearchPDF()"
+              class="px-4 py-2 rounded-xl text-sm font-semibold
+                    bg-white/70 border border-white/80
+                    hover:bg-red-500 shadow-sm transition
+                    flex items-center gap-2">
+              📄 Export PDF
+            </button>
+          </div>
+
+        </div>
+
+        <div class="mt-6 relative h-[550px]">
+          <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden p-4 space-y-4">
+
+            <!-- Search Form -->
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold mb-4">Search Inputs</div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-medium opacity-70 mb-1">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    id="search-datetime"
+                    class="w-full rounded-xl p-3 bg-white/70 border border-white/80 outline-none"
+                  >
+                  
+                </div>
+
+                <div>
+                  <label class="block text-xs font-medium opacity-70 mb-1">Duration (seconds)</label>
+                  <input
+                    type="number"
+                    id="search-duration"
+                    min="1"
+                    placeholder="e.g. 60"
+                    class="w-full rounded-xl p-3 bg-white/70 border border-white/80 outline-none"
+                  >
+                </div>
+
+                <div class="flex items-end">
+                  <button
+                    type="button"
+                    onclick="runSearchAnalysis()"
+                    class="w-full rounded-xl px-4 py-3 font-semibold text-white shadow transition hover:opacity-90
+                    bg-gradient-to-r from-orange-500 to-red-500">
+                    Run Search
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Result Preview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+                <div class="text-xs opacity-60">Dominant Frequency</div>
+                <span class="search-freq">--.-- Hz</span>
+              </div>
+
+              <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+                <div class="text-xs opacity-60">Damping Ratio</div>
+                <span class="search-damping">--.-- %</span>
+              </div>
+
+              <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+                <div class="text-xs opacity-60">Analysis Status</div>
+                <span class="search-status">Idle</span>
+              </div>
+            </div>
+
+            <!-- Baseline Comparison -->
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold mb-3">Baseline Comparison</div>
+
+              <div class="rounded-xl p-3 bg-white/60 border border-white/80 space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Analytical Frequency (ETABS)</span>
+                  <span class="text-xs opacity-70 search-etabs">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Measured Frequency (OMA)</span>
+                  <span class="text-xs opacity-70 search-measured">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Matched Mode</span>
+                  <span class="text-xs opacity-70 search-mode">--</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Frequency Difference</span>
+                  <span class="text-xs opacity-70 search-diffhz">--.-- Hz</span>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <span class="opacity-80">Percentage Difference</span>
+                  <span class="text-xs font-medium text-emerald-600 search-diffpct">--.-- %</span>
+                </div>
+
+                <div class="pt-2 text-xs opacity-60">
+                  Selected time-window analysis will be compared against the ETABS baseline.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+      
+      <!-- PAGE: ADVISORY -->
+     
+      <div x-show="page==='advisory'" x-cloak>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Advisory</h2>
+            <p class="text-xs opacity-70 mt-1">Engineering Advisory • Earthquake Response</p>
+          </div>
+
+          <!-- Advisory Tabs -->
+          <div class="inline-flex items-center gap-1 rounded-2xl p-1 bg-white/60 border border-white/70 shadow-inner">
+            <button type="button" @click="advisoryTab='engineering'"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition"
+              :class="advisoryTab==='engineering' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+              Engineering
+            </button>
+            <button type="button" @click="advisoryTab='response'"
+              class="px-3 py-2 rounded-xl text-sm font-medium transition"
+              :class="advisoryTab==='response' ? 'bg-white shadow-sm' : 'opacity-70 hover:opacity-100'">
+              Earthquake Response
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6 relative h-[360px]">
+          <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden">
+
+            <!-- Engineering Advisory -->
+            <section x-show="advisoryTab==='engineering'" x-cloak class="absolute inset-0 p-4 overflow-auto">
+              <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-semibold">Engineering Interpretation (Placeholder)</div>
+                  <span class="text-xs opacity-60">Based on frequency & damping trends</span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="rounded-xl bg-white/70 border border-white/80 p-3">
+                    <div class="text-xs opacity-60">Condition</div>
+                    <div class="mt-1 font-semibold text-emerald-700">Stable</div>
+                    
+                  </div>
+
+                  <div class="rounded-xl bg-white/70 border border-white/80 p-3">
+                    <div class="text-xs opacity-60">Watch Threshold</div>
+                    <div class="mt-1 font-semibold">±5% frequency drift</div>
+                    <div class="mt-2 text-xs opacity-60">Trigger review when exceeded.</div>
+                  </div>
+
+                  <div class="rounded-xl bg-white/70 border border-white/80 p-3">
+                    <div class="text-xs opacity-60">Recommended Action</div>
+                    <div class="mt-1 font-semibold">Continue Monitoring</div>
+                    <div class="mt-2 text-xs opacity-60">Log baseline weekly for comparison.</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 rounded-xl bg-white/60 border border-white/80 p-3">
+                  <div class="text-xs font-semibold uppercase opacity-60 mb-2">Notes</div>
+                  <ul class="text-sm opacity-80 space-y-2">
+                    <li>• Ambient excitation can cause small frequency variations.</li>
+                    <li>• Compare changes against ETABS baseline and historical records.</li>
+                    <li>• If trend persists across multiple days, schedule inspection.</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <!-- Earthquake Response -->
+            <section x-show="advisoryTab==='response'" x-cloak class="absolute inset-0 p-4 overflow-auto">
+
+              <!-- sample lang delete din to !!!!!  -->
+              <div class="mb-3 flex flex-wrap items-center gap-2">
+                <span class="text-xs opacity-60">Demo Alert Level:</span>
+                
+                <button @click="alertLevel='green'"
+                  class="px-3 py-1.5 rounded-xl text-xs border border-white/80 bg-white/60 hover:opacity-90 transition"
+                  :class="alertLevel==='green' ? 'font-semibold' : 'opacity-70'">Green</button>
+
+                <button @click="alertLevel='yellow'"
+                  class="px-3 py-1.5 rounded-xl text-xs border border-white/80 bg-white/60 hover:opacity-90 transition"
+                  :class="alertLevel==='yellow' ? 'font-semibold' : 'opacity-70'">Yellow</button>
+                  
+                <button @click="alertLevel='red'"
+                  class="px-3 py-1.5 rounded-xl text-xs border border-white/80 bg-white/60 hover:opacity-90 transition"
+                  :class="alertLevel==='red' ? 'font-semibold' : 'opacity-70'">Red</button>
+              </div>
+
+              <!-- GREEN -->
+              <div x-show="alertLevel==='green'" x-cloak class="rounded-2xl bg-emerald-50/70 border border-emerald-200 p-4">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-semibold text-emerald-800">Normal Status (Green)</div>
+                  <span class="text-xs text-emerald-700">Monitoring Active</span>
+                </div>
+                <p class="mt-3 text-sm text-emerald-900/80">
+                  Structure is operating within normal vibration limits. Continue normal activities.
+                </p>
+                <ul class="mt-3 text-sm text-emerald-900/80 space-y-2">
+                  <li>• Keep monitoring enabled for continuous baseline tracking.</li>
+                  <li>• Report unusual vibrations to the administrator.</li>
+                </ul>
+              </div>
+
+              <!-- YELLOW -->
+              <div x-show="alertLevel==='yellow'" x-cloak class="rounded-2xl bg-amber-50/70 border border-amber-200 p-4">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-semibold text-amber-800">Alert Status (Yellow)</div>
+                  <span class="text-xs text-amber-700">Remain Attentive</span>
+                </div>
+                <p class="mt-3 text-sm text-amber-900/80">
+                  Increased vibration detected. Remain attentive, limit movement, and monitor updates.
+                </p>
+                <ul class="mt-3 text-sm text-amber-900/80 space-y-2">
+                  <li>• Stay calm and prepare for possible aftershocks.</li>
+                  <li>• Avoid crowded areas and unsecured shelves.</li>
+                  <li>• Monitor the dashboard for status changes.</li>
+                </ul>
+              </div>
+
+              <!-- RED -->
+              <div x-show="alertLevel==='red'" x-cloak class="rounded-2xl bg-rose-50/70 border border-rose-200 p-4">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-semibold text-rose-800">Danger Status (Red)</div>
+                  <span class="text-xs text-rose-700">Follow Safety Procedures</span>
+                </div>
+                <p class="mt-3 text-sm text-rose-900/80">
+                  Strong seismic motion detected. Follow standard earthquake safety procedures:
+                </p>
+                <ul class="mt-3 text-sm text-rose-900/80 space-y-2">
+                  <li><b>• Drop, Cover, and Hold On.</b></li>
+                  <li>• Stay away from windows and heavy objects.</li>
+                  <li>• Evacuate only after shaking stops and conditions are safe.</li>
+                </ul>
+              </div>
+
+              <!-- Post-earthquake reminders (always show) -->
+              <div class="mt-4 rounded-2xl bg-white/70 border border-white/80 p-4">
+                <div class="text-sm font-semibold">Post-Earthquake Reminders</div>
+                <ul class="mt-2 text-sm opacity-80 space-y-2">
+                  <li>• Avoid re-entering the structure until inspection is completed.</li>
+                  <li>• Report cracks, unusual sounds, or visible damage to admins.</li>
+                  <li>• Await official clearance before resuming building use.</li>
+                </ul>
+              </div>
+
+            </section>
+          </div>
+        </div>
+
+      </div>
+
+      
+      <!-- PAGE: HISTORY -->
+      
+      <div x-show="page==='history'" x-cloak>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Monitoring History</h2>
+        
+          </div>
+        </div>
+
+        <div class="mt-6 relative h-[700px]">
+          <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden p-4 flex flex-col gap-4">
+
+            <!-- Filters -->
+<div class="rounded-2xl bg-white/70 border border-white/80 p-3">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <div>
+      <div class="text-xs font-medium opacity-70 mb-1">From</div>
+      <input
+        id="history-from-date"
+        type="date"
+        class="w-full rounded-xl p-2 bg-white/70 border border-white/80 outline-none"
+        onchange="filterHistoryRecords()"
+      >
+    </div>
+
+    <div>
+      <div class="text-xs font-medium opacity-70 mb-1">To</div>
+      <input
+        id="history-to-date"
+        type="date"
+        class="w-full rounded-xl p-2 bg-white/70 border border-white/80 outline-none"
+        onchange="filterHistoryRecords()"
+      >
+    </div>
+
+    <div>
+      <div class="text-xs font-medium opacity-70 mb-1">Event Type</div>
+      <select
+        id="history-classification"
+        class="w-full rounded-xl p-2 bg-white/70 border border-white/80 outline-none"
+        onchange="filterHistoryRecords()"
+      >
+        <option value="All">All</option>
+        <option value="Ambient">Ambient</option>
+        <option value="Human Activity">Human Activity</option>
+        <option value="Seismic">Seismic</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="text-xs font-medium opacity-70 mb-1">Alert Level</div>
+      <select
+        id="history-status"
+        class="w-full rounded-xl p-2 bg-white/70 border border-white/80 outline-none"
+        onchange="filterHistoryRecords()"
+      >
+        <option value="All">All</option>
+        <option value="Normal">Normal</option>
+        <option value="Alert">Alert</option>
+        <option value="Danger">Danger</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+            <!-- Records -->
+            <div class="flex-1 rounded-2xl bg-white/60 border border-white/80 overflow-auto">
+              <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+                <div class="text-sm font-semibold">Archived Records (Placeholder)</div>
+                <div class="text-xs opacity-70">Download CSV / PDF</div>
+              </div>
+
+              <div class="p-4 space-y-3" id="history-records-container">
+
+  {% for record in history_records %}
+<div
+  x-data="{ open: false }"
+  class="history-record bg-white/70 rounded-2xl p-4 mb-3 shadow-sm"
+  data-timestamp="{{ record.timestamp|date:'c' }}"
+  data-classification="{{ record.classification }}"
+  data-status="{{ record.status }}"
+>
+
+  <!-- TOP ROW -->
+  <div class="flex justify-between items-center cursor-pointer"
+       @click="open = !open">
+
+    <!-- LEFT -->
+    <div>
+      <div class="font-semibold text-gray-800">
+        {{ record.timestamp|date:"Y-m-d • H:i" }}
+      </div>
+      <div class="text-sm text-gray-500">
+        fₙ: {{ record.dominant_frequency|floatformat:2 }} Hz •
+        ζ: {{ record.damping_ratio|floatformat:2 }} %
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="flex items-center gap-2">
+
+      <!-- EVENT -->
+      <span class="px-3 py-1 rounded-full text-xs
+     {% if record.dominant_frequency >= 0.5 and record.dominant_frequency <= 5 %}
+      bg-green-100 text-green-700
+     {% elif record.dominant_frequency > 5 and record.dominant_frequency < 19 %}
+      bg-yellow-100 text-yellow-700
+     {% elif record.dominant_frequency >= 19 %}
+      bg-red-100 text-red-700
+     {% else %}
+      bg-gray-100 text-gray-700
+     {% endif %}
+      ">
+
+      {% if record.dominant_frequency >= 0.5 and record.dominant_frequency <= 5 %}
+       Ambient
+      {% elif record.dominant_frequency > 5 and record.dominant_frequency < 19 %}
+       Human Activity
+      {% elif record.dominant_frequency >= 19 %}
+       Seismic
+      {% else %}
+       Unknown
+      {% endif %}
+      </span>
+
+
+      <!-- STATUS -->
+    <span class="px-3 py-1 rounded-full text-xs
+      {% if record.dominant_frequency <= 15 %}
+        bg-green-100 text-green-700
+      {% elif record.dominant_frequency <= 20 %}
+        bg-yellow-100 text-yellow-700
+      {% else %}
+        bg-red-100 text-red-700
+      {% endif %}
+    ">
+      {% if record.dominant_frequency <= 15 %}
+        Normal
+      {% elif record.dominant_frequency <= 20 %}
+        Alert
+      {% else %}
+        Danger
+      {% endif %}
+    </span>
+
+      <!-- PDF -->
+      <a href="/export/nfd/?id={{ record.id }}"
+         class="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-green-600 transition shadow-sm">
+        PDF
+      </a>
+
+    </div>
+  </div>
+
+  <!-- EXPANDED DETAILS -->
+  <div x-show="open"
+       x-transition
+       class="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm text-gray-700">
+
+    <div>
+      <span class="text-gray-400">Matched Mode</span><br>
+      <span class="font-medium">{{ record.matched_mode }}</span>
+    </div>
+
+    <div>
+      <span class="text-gray-400">ETABS Frequency</span><br>
+      <span class="font-medium">{{ record.etabs_frequency }} Hz</span>
+    </div>
+
+    <div>
+      <span class="text-gray-400">Frequency Difference</span><br>
+      <span class="font-medium">{{ record.frequency_difference_percent|floatformat:2 }} %</span>
+    </div>
+
+    <div>
+      <span class="text-gray-400">Classification</span><br>
+      <span class="font-medium">{{ record.classification }}</span>
+    </div>
+
+  </div>
+
+</div>
+
+  {% empty %}
+  <div class="text-center text-sm opacity-60 py-10">
+    No history records yet
+  </div>
+  {% endfor %}
+
+  <div id="history-no-match" class="hidden text-center text-sm opacity-60 py-10">
+    No matching history records found
+  </div>
+
+</div>
+</div> <!-- Records container -->
+
+</div> <!-- absolute container -->
+
+</div> <!-- relative container -->
+
+</div> <!-- HISTORY PAGE -->
+
+
+      
+      <!-- PAGE: ABOUT -->
+      
+      <div x-show="page==='about'" x-cloak>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="font-semibold text-lg text-[color:var(--text-100)]">About</h2>
+            <p class="text-xs opacity-70 mt-1">Project Overview • Sensor Specs • Research Team</p>
+          </div>
+        </div>
+
+        <div class="mt-6 relative min-h-[550px] max-h-[70vh]">
+          <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-auto p-4 space-y-4">
+
+            <!-- Project Overview -->
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Project Overview</div>
+              <p class="mt-2 text-sm opacity-80 leading-relaxed">
+                This Structural Health Monitoring System (SHMS) is designed to monitor vibration response,
+                identify dynamic properties (natural frequency and damping), and support structural condition
+                assessment for the Science & Technology Building through continuous data collection and analysis.
+              </p>
+            </div>
+
+            <!-- Sensor Specifications -->
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Sensor Specifications</div>
+              <p class="mt-2 text-sm opacity-80 leading-relaxed">
+                Raspberry Shake 4D (RS4D) • Channels: Z / N / E • Used for capturing vibration signals for
+                frequency-domain analysis and modal-based interpretation. (Add exact RS4D specs here later.)
+              </p>
+            </div>
+
+            <!-- Research Team -->
+            <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+              <div class="text-sm font-semibold">Research Team</div>
+              <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Agana, Jamilyn N.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Andes, Kristel Joyce C.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Bermudez, Dessiree Palma M.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Demausa, Maria Luisa B.</span>
+  </div>
+
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-white/40 backdrop-blur border border-white/30 shadow-sm">
+    <div class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <span class="text-sm font-medium">Jerusalem, Febie Rose N.</span>
+  </div>
+
+</div>
+              <div class="mt-3 text-xs opacity-60">
+                Acknowledgments: (optional) University / adviser / contributors.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+async function updateFrequency() {
+    try {
+        const response = await fetch("/api/latest-frequency/");
+        const data = await response.json();
+
+        if (data.frequency !== null) {
+            document.getElementById("dominant-frequency").innerText = data.frequency;
+        }
+
+    } catch (err) {
+        console.error("Failed to fetch frequency", err);
+    }
+}
+
+setInterval(updateFrequency, 3000);
+</script>
+
+<!-- WAVEFORM DISPLAYYYYYYYYY -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let fftChartInstance = null;
+
+function updateFFTChart(frequencies, amplitudes, dominantFrequency = null) {
+    const canvas = document.getElementById("fftChart");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    const safeFreqs = Array.isArray(frequencies) ? frequencies : [];
+    const safeAmps = Array.isArray(amplitudes) ? amplitudes : [];
+
+    if (!safeFreqs.length || !safeAmps.length) {
+        if (fftChartInstance) {
+            fftChartInstance.destroy();
+            fftChartInstance = null;
+        }
+
+        fftChartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "FDD Singular Value",
+                    data: [],
+                    borderColor: "#f97316",
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Frequency (Hz)"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Singular Value"
+                        }
+                    }
+                }
+            }
+        });
+
+        return;
+    }
+
+    let markerData = [];
+    if (dominantFrequency !== null && dominantFrequency !== undefined) {
+        const maxAmp = Math.max(...safeAmps, 0);
+        markerData = safeFreqs.map((f) => {
+            return Math.abs(Number(f) - Number(dominantFrequency)) < 1e-6 ? maxAmp : null;
+        });
+
+        if (!markerData.some(v => v !== null)) {
+            let closestIndex = 0;
+            let minDiff = Infinity;
+
+            safeFreqs.forEach((f, i) => {
+                const diff = Math.abs(Number(f) - Number(dominantFrequency));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = i;
+                }
+            });
+
+            markerData = safeFreqs.map((_, i) => i === closestIndex ? maxAmp : null);
+        }
+    }
+
+    if (fftChartInstance) {
+        fftChartInstance.destroy();
+    }
+
+    fftChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: safeFreqs,
+            datasets: [
+                {
+                    label: "FDD Singular Value",
+                    data: safeAmps,
+                    borderColor: "#f97316",
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: "Dominant Frequency",
+                    data: markerData,
+                    borderColor: "#16a34a",
+                    backgroundColor: "#16a34a",
+                    pointRadius: 4,
+                    pointHoverRadius: 5,
+                    showLine: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: { display: true }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: "Frequency (Hz)"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "Singular Value"
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function loadNFD() {
+    const response = await fetch("/api/latest-nfd/");
+    const data = await response.json();
+
+    // Dominant Frequency Card
+    document.getElementById("freq-card").innerText =
+        Number(data.dominant_frequency).toFixed(3) + " Hz";
+
+   // Damping Ratio Card
+const dampingTop = document.getElementById("damping-card");
+const dampingResult = document.getElementById("damping-result");
+
+if (data.damping_ratio !== null && data.damping_ratio !== undefined) {
+    const value = (Number(data.damping_ratio) * 100).toFixed(2) + " %";
+
+    if (dampingTop) dampingTop.innerText = value;
+    if (dampingResult) dampingResult.innerText = value;
+} else {
+    if (dampingTop) dampingTop.innerText = "N/A";
+    if (dampingResult) dampingResult.innerText = "N/A";
+}
+
+    // Status Card
+    const statusCard = document.getElementById("status-card");
+const freq = Number(data.dominant_frequency);
+
+if (!isNaN(freq)) {
+
+    if (freq >= 0.5 && freq <= 15) {
+        statusCard.innerText = "Normal";
+        statusCard.className = "mt-3 text-2xl font-bold text-green-600";
+    }
+
+    else if (freq >= 16 && freq <= 20) {
+        statusCard.innerText = "Alert";
+        statusCard.className = "mt-3 text-2xl font-bold text-yellow-500";
+    }
+
+    else if (freq > 20) {
+        statusCard.innerText = "Danger";
+        statusCard.className = "mt-3 text-2xl font-bold text-red-600";
+    }
+
+    else {
+        statusCard.innerText = "Monitoring";
+        statusCard.className = "mt-3 text-2xl font-bold text-gray-500";
+    }
+
+}
+
+    // FFT Chart
+    updateFFTChart(
+    data.fft_frequencies,
+    data.fft_amplitudes,
+    data.dominant_frequency
+);
+}
+
+loadNFD();
+setInterval(loadNFD, 5000);
+async function updateBaselineComparison() {
+    const response = await fetch("/api/nfd/latest/");
+    const data = await response.json();
+
+    const etabs = data.etabs_frequency;
+    const measured = data.dominant_frequency;
+    const diff = data.difference_percent;
+
+    document.getElementById("etabs-frequency").textContent =
+        etabs !== null && etabs !== undefined ? Number(etabs).toFixed(3) + " Hz" : "--.-- Hz";
+
+    document.getElementById("measured-frequency").textContent =
+        measured !== null && measured !== undefined ? Number(measured).toFixed(3) + " Hz" : "--.-- Hz";
+
+    document.getElementById("difference-percent").textContent =
+        diff !== null && diff !== undefined ? Number(diff).toFixed(2) + " %" : "--.-- %";
+    document.getElementById("baselineMatchedMode").textContent =
+        data.matched_mode_number ? `Mode ${data.matched_mode_number}` : "--";
+
+     document.getElementById("baselineDiffHz").textContent =
+        data.difference_hz !== null && data.difference_hz !== undefined
+        ? `${Number(data.difference_hz).toFixed(3)} Hz`
+        : "--.-- Hz";
+}
+
+updateBaselineComparison();
+setInterval(updateBaselineComparison, 5000);
+
+</script>
+
+<script>
+function filterHistoryRecords() {
+    const fromDateValue = document.getElementById("history-from-date")?.value || "";
+    const toDateValue = document.getElementById("history-to-date")?.value || "";
+    const classificationValue = document.getElementById("history-classification")?.value || "All";
+    const statusValue = document.getElementById("history-status")?.value || "All";
+
+    const records = document.querySelectorAll(".history-record");
+    const noMatch = document.getElementById("history-no-match");
+
+    let visibleCount = 0;
+
+    records.forEach((record) => {
+        const recordTimestamp = record.dataset.timestamp;
+        const recordClassification = record.dataset.classification;
+        const recordStatus = record.dataset.status;
+
+        const recordDate = new Date(recordTimestamp);
+        let show = true;
+
+        // FROM DATE
+        if (fromDateValue) {
+            const fromDate = new Date(fromDateValue + "T00:00:00");
+            if (recordDate < fromDate) {
+                show = false;
+            }
+        }
+
+        // TO DATE
+        if (toDateValue) {
+            const toDate = new Date(toDateValue + "T23:59:59");
+            if (recordDate > toDate) {
+                show = false;
+            }
+        }
+
+        // EVENT TYPE / CLASSIFICATION
+        if (classificationValue !== "All" && recordClassification !== classificationValue) {
+            show = false;
+        }
+
+        // ALERT LEVEL / STATUS
+        if (statusValue !== "All" && recordStatus !== statusValue) {
+            show = false;
+        }
+
+        if (show) {
+            record.classList.remove("hidden");
+            visibleCount += 1;
+        } else {
+            record.classList.add("hidden");
+        }
+    });
+
+    if (noMatch) {
+        if (visibleCount === 0 && records.length > 0) {
+            noMatch.classList.remove("hidden");
+        } else {
+            noMatch.classList.add("hidden");
+        }
+    }
+}
+
+window.addEventListener("load", () => {
+    filterHistoryRecords();
+});
+</script>
+
+<script>
+function drawSignal(canvasId, samples, color) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!Array.isArray(samples) || samples.length === 0) {
+        return;
+    }
+
+    const minVal = Math.min(...samples);
+    const maxVal = Math.max(...samples);
+    const range = (maxVal - minVal) || 1;
+
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+
+    samples.forEach((value, index) => {
+        const x = (index / (samples.length - 1)) * canvas.width;
+        const y = canvas.height - (((value - minVal) / range) * canvas.height);
+
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+}
+
+async function loadWaveforms() {
+    try {
+        const response = await fetch("/api/latest-nfd-waveforms/");
+        const data = await response.json();
+
+        drawSignal("rawSignal", data.raw_signal, "#9ca3af");
+        drawSignal("filteredSignal", data.filtered_signal, "#10b981");
+
+        const samplingRateCard = document.getElementById("sampling-rate-card");
+        if (samplingRateCard && data.sampling_rate !== null && data.sampling_rate !== undefined) {
+            samplingRateCard.innerText = Number(data.sampling_rate).toFixed(0) + " Hz";
+        }
+    } catch (err) {
+        console.error("Failed to fetch waveform data", err);
+    }
+}
+
+window.addEventListener("load", () => {
+    loadWaveforms();
+    setInterval(loadWaveforms, 5000);
+});
+
+window.addEventListener("resize", loadWaveforms);
+</script>
+
+<script>
+async function runSearchAnalysis() {
+    const datetime = document.getElementById("search-datetime")?.value;
+    const duration = document.getElementById("search-duration")?.value;
+
+    if (!datetime || !duration) {
+        alert("Please enter date/time and duration");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/nfd/search/?datetime=${encodeURIComponent(datetime)}&duration=${encodeURIComponent(duration)}`);
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            alert(data.error || "Search failed");
+            return;
+        }
+
+        const setText = (selector, value) => {
+            const el = document.querySelector(selector);
+            if (el) el.innerText = value;
+        };
+
+        setText(".search-freq", Number(data.dominant_frequency).toFixed(3) + " Hz");
+        setText(".search-damping", data.damping_ratio !== null && data.damping_ratio !== undefined
+            ? (Number(data.damping_ratio) * 100).toFixed(2) + " %"
+            : "N/A");
+        const freq = Number(data.dominant_frequency);
+
+        let status = "Monitoring";
+
+        if (!isNaN(freq)) {
+            if (freq >= 0.5 && freq <= 15) {
+                status = "Normal";
+            } else if (freq >= 16 && freq <= 20) {
+                status = "Alert";
+            } else if (freq > 20) {
+                status = "Danger";
+            }
+        }
+
+        setText(".search-status", status);
+
+        setText(".search-etabs", Number(data.etabs_frequency).toFixed(3) + " Hz");
+        setText(".search-measured", Number(data.dominant_frequency).toFixed(3) + " Hz");
+        setText(".search-mode", data.matched_mode ? "Mode " + data.matched_mode : "--");
+        setText(".search-diffhz",
+          (data.difference_hz !== null &&
+          data.difference_hz !== undefined &&
+          !isNaN(data.difference_hz))
+            ? Number(data.difference_hz).toFixed(3) + " Hz"
+            : "--.-- Hz"
+        );
+
+        setText(".search-diffpct",
+          (data.difference_percent !== null &&
+          data.difference_percent !== undefined &&
+          !isNaN(data.difference_percent))
+            ? Number(data.difference_percent).toFixed(2) + " %"
+            : "--.-- %"
+        );
+
+        console.log("Search success:", data);
+        console.log("FD:", data.difference_hz);
+        console.log("PD:", data.difference_percent);
+
+    } catch (err) {
+        console.error("runSearchAnalysis error:", err);
+        alert("Search failed");
+    }
+}
+</script>
+
+<script>
+function exportSearchPDF() {
+    const datetime = document.getElementById("search-datetime")?.value;
+    const duration = document.getElementById("search-duration")?.value;
+
+    if (!datetime || !duration) {
+        alert("Please enter date/time and duration first");
+        return;
+    }
+
+    const url = `/export/nfd-search-pdf/?datetime=${encodeURIComponent(datetime)}&duration=${encodeURIComponent(duration)}`;
+    window.open(url, "_blank");
+}
+</script>
+
+
+{% endblock %}

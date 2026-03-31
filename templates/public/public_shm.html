@@ -1,0 +1,1109 @@
+{% extends "base_public.html" %}
+{% block title %}SHM Public{% endblock %}
+
+{% block content %}
+
+<!-- NAVBAR -->
+
+<div class="sticky top-0 z-50 mb-10">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-center justify-between
+                px-6 py-3 rounded-2xl
+                bg-white/50 backdrop-blur-xl
+                border border-white/40
+                shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+
+
+  <div class="flex items-center gap-2 font-semibold text-[color:var(--text-100)]">
+    <span class="text-orange-500 text-lg">●</span>
+    <span>SHM</span>
+  </div>
+
+  <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[color:var(--text-100)]/80">
+    <a href="{% url 'landing' %}" class="hover:text-orange-500 transition">Home</a>
+    <a href="{% url 'public_about' %}" class="hover:text-orange-500 transition">About Us</a>
+    <a href="{% url 'public_contact' %}" class="hover:text-orange-500 transition">Contact</a>
+  </div>
+
+  <a href="{% url 'login' %}"
+     class="px-5 py-2 rounded-full
+            bg-gradient-to-r from-orange-500 to-orange-600
+            text-white shadow-md hover:shadow-lg
+            transition text-sm font-semibold">
+    Login
+  </a>
+
+</div>
+
+
+  </div>
+</div>
+
+<!-- TITLE -->
+
+<div class="text-center mb-12">
+  <h1 class="text-2xl md:text-3xl font-semibold text-[color:var(--text-100)]">
+    Structural Health Monitoring
+  </h1>
+  <p class="text-sm text-[color:var(--text-100)]/60 mt-2">
+    Public Monitoring Dashboard
+  </p>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 space-y-8">
+
+
+  <!-- TOP CARDS -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Sensor -->
+    <div class="rounded-2xl p-6 bg-white/40 backdrop-blur-xl border border-white/30">
+      <div class="flex justify-between">
+        <span class="text-sm text-gray-500">Sensor Status</span>
+        <span class="text-xs text-green-500">● Online</span>
+      </div>
+      <h2 class="text-2xl font-bold mt-2">RS4D</h2>
+      <p class="text-xs mt-2 text-gray-500">Connection stable • Feed active</p>
+    </div>
+
+    <!-- Last Update -->
+    <div class="rounded-2xl p-6 bg-white/40 backdrop-blur-xl border border-white/30">
+      <span class="text-sm text-gray-500">Last Update</span>
+      <div id="last-update" class="text-lg font-semibold mt-2">--</div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="rounded-2xl p-6 bg-white/40 backdrop-blur-xl border border-white/30">
+      <div class="flex justify-between">
+        <span class="text-sm text-gray-500">Alerts</span>
+        <span id="alerts-badge" class="text-xs text-green-500">Safe</span>
+      </div>
+      <div id="alerts-count" class="text-2xl font-bold mt-2">0</div>
+      <p id="alerts-desc" class="text-xs text-gray-500">No thresholds exceeded</p>
+    </div>
+
+  </div>
+
+  <!-- WORKSPACE -->
+  <div x-data="{ tab: 'event' }"
+       class="rounded-[28px] p-6 bg-white/40 backdrop-blur-2xl border border-white/30">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-lg font-semibold">SHM Workspace</h2>
+        <p class="text-sm text-gray-500">Structural monitoring & assessment</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="flex bg-white/40 rounded-full p-1 text-sm">
+        <button @click="tab='event'"
+          :class="tab==='event' ? 'bg-white shadow' : ''"
+          class="px-4 py-1 rounded-full">Event</button>
+
+        <button @click="tab='metrics'"
+          :class="tab==='metrics' ? 'bg-white shadow' : ''"
+          class="px-4 py-1 rounded-full">Metrics</button>
+
+        <button @click="tab='predict'"
+          :class="tab==='predict' ? 'bg-white shadow' : ''"
+          class="px-4 py-1 rounded-full">Predict</button>
+      </div>
+    </div>
+
+    <!-- EVENT -->
+    <div x-show="tab==='event'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- LEFT -->
+      <div class="space-y-4">
+
+        <div class="bg-white/40 p-4 rounded-xl">
+          <p class="text-sm text-gray-500">Activity</p>
+          <p id="activity-text" class="text-green-600 font-semibold">Ambient</p>
+        </div>
+
+        <div class="bg-white/40 p-4 rounded-xl">
+          <p class="text-sm text-gray-500">Peak Frequency</p>
+          <p id="peak-freq" class="text-xl font-bold">-- Hz</p>
+        </div>
+
+        <div class="bg-white/40 p-4 rounded-xl">
+          <p class="text-sm text-gray-500">Peak Acceleration</p>
+          <p id="peak-acc" class="text-xl font-bold">--</p>
+        </div>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div class="bg-white/40 p-4 rounded-xl">
+        <div class="flex justify-between mb-2">
+          <span class="text-sm">Live Waveform</span>
+          <span class="text-xs text-gray-500">CH: Z/N/E</span>
+        </div>
+        <div class="h-[240px]">
+          <canvas id="shmWaveform"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+   <!-- ================= METRICS TAB ================= -->
+<div x-show="tab==='metrics'" x-cloak class="w-full">
+
+  <div class="flex gap-4">
+
+    <!-- LEFT SIDE -->
+    <div class="flex flex-col gap-4 w-[60%]">
+
+      <!-- TOP -->
+      <div class="flex gap-4">
+
+        <!-- FUNDAMENTAL -->
+        <div class="w-1/2 rounded-2xl bg-white/60 p-5">
+          <h3 class="text-sm font-semibold mb-1">Fundamental Frequency</h3>
+          <div id="fundamental-freq" class="text-2xl font-bold">3.49 Hz</div>
+          <p class="text-xs opacity-60 mt-1">Primary natural frequency</p>
+        </div>
+
+        <!-- STRUCTURAL -->
+        <div class="w-1/2 rounded-2xl bg-white/60 p-5 flex flex-col justify-center">
+          <h3 class="text-sm font-semibold mb-1">Structural Condition</h3>
+          <div id="structural-condition" class="text-lg font-semibold text-emerald-600">
+            STABLE
+          </div>
+          <p class="text-xs opacity-60 mt-1">
+            Based on frequency trends
+          </p>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM -->
+      <div class="rounded-2xl bg-white/60 p-4 flex flex-col">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-sm font-semibold">Spectral Density</h3>
+          <span id="peak-spectrum" class="text-xs text-emerald-600 font-semibold">
+            -- Hz peak
+          </span>
+        </div>
+
+        <div class="h-40 rounded-xl bg-white/50 flex items-center justify-center text-xs opacity-50 italic">
+          <canvas id="shmSpectrum" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="w-[40%] rounded-2xl bg-white/60 p-4 flex flex-col">
+
+      <h3 class="text-sm font-semibold mb-2">Mode Shape Visualization</h3>
+
+      <div id="mode-shape-visual" class="flex-1 flex items-center justify-center">
+        <div id="building" class="flex flex-col items-center gap-2 scale-125">
+
+          <!-- Roof -->
+          <div class="w-16 h-2 bg-slate-500 rounded-sm"></div>
+
+          <!-- Floor 3 -->
+          <div class="floor floor-3 w-20 h-5 bg-emerald-400 rounded"></div>
+
+          <!-- Floor 2 -->
+          <div class="floor floor-2 w-24 h-5 bg-emerald-400 rounded"></div>
+
+          <!-- Floor 1 -->
+          <div class="floor floor-1 w-28 h-5 bg-emerald-400 rounded"></div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- ================= END METRICS ================= -->
+
+    <!-- ================= PREDICT TAB ================= -->
+<div x-show="tab==='predict'" x-cloak class="flex flex-col gap-4">
+
+  <!-- TOP ROW -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <div class="rounded-2xl bg-white/60 p-4">
+      <h3 class="text-sm font-semibold mb-1">Sigma Status</h3>
+      <div id="predict-status" class="text-lg font-semibold text-emerald-600">
+        Inside Safe Zone
+      </div>
+      <p class="text-xs opacity-60 mt-1">
+        Within statistical limits
+      </p>
+    </div>
+
+    <div class="rounded-2xl bg-white/60 p-4">
+      <h3 class="text-sm font-semibold mb-1">Residual Value</h3>
+      <div id="predict-residual" class="text-2xl font-bold">± --.-- Hz</div>
+      <p class="text-xs opacity-60 mt-1">
+        Predicted minus measured frequency
+      </p>
+    </div>
+
+  </div>
+
+  <!-- BASELINE COMPARISON -->
+  <div class="rounded-2xl bg-white/60 p-4">
+    <div class="text-xs font-semibold uppercase opacity-60 mb-3">
+      Baseline Comparison
+    </div>
+
+    <div class="rounded-xl bg-white/50 p-4 space-y-4">
+
+      <div class="flex items-center justify-between text-sm">
+        <span class="opacity-80">Analytical Frequency (SEISMO BUILD)</span>
+        <span id="predict-seismobuild-frequency" class="font-medium">--.-- Hz</span>
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <span class="opacity-80">Measured Frequency (OMA)</span>
+        <span id="predict-measured-frequency" class="font-medium">--.-- Hz</span>
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <span class="opacity-80">Matched Mode</span>
+        <span id="predict-matched-mode" class="font-semibold">--</span>
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <span class="opacity-80">Frequency Difference</span>
+        <span id="predict-diff-hz" class="font-medium">--.-- Hz</span>
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <span class="opacity-80">Difference</span>
+        <span id="predict-diff-percent" class="font-semibold text-emerald-600">--.-- %</span>
+      </div>
+
+      <div class="pt-2 text-xs opacity-60">
+        Minor variation is expected due to ambient excitation and modeling assumptions.
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ================= END PREDICT ================= -->
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+      <script>
+        let shmChart = null;
+
+        function drawSHMWaveform(samples) {
+          const canvas = document.getElementById("shmWaveform");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+
+          // destroy old chart
+          if (shmChart) {
+            shmChart.destroy();
+          }
+
+          // 🔥 smoother + smaller visual scaling
+          const maxVal = (Math.max(...samples.map(v => Math.abs(v))) || 1) * 1.4;
+
+          shmChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: samples.map((_, i) => i),
+              datasets: [{
+                label: "Acceleration",
+                data: samples,
+                borderColor: "#1d4ed8",
+                borderWidth: 1.5,          // 🔥 thinner line
+                tension: 0.35,             // 🔥 smoother curve
+                pointRadius: 0,
+                fill: false,
+                spanGaps: true             // 🔥 cleaner continuity
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+
+              // 🔥 THIS MAKES GRAPH LOOK SMALLER (KEY)
+              layout: {
+                padding: {
+                  top: 20,
+                  bottom: 20,
+                  left: 10,
+                  right: 10
+                }
+              },
+
+              plugins: {
+                legend: { display: false }
+              },
+
+              scales: {
+                x: {
+                  display: true,
+                  grid: {
+                    color: "rgba(0,0,0,0.05)",
+                    lineWidth: 1
+                  },
+                  ticks: {
+                    display: false
+                  }
+                },
+                y: {
+                  display: true,
+                  min: -maxVal,
+                  max: maxVal,
+                  grid: {
+                    color: "rgba(0,0,0,0.08)",
+                    lineWidth: 1
+                  },
+                  ticks: {
+                    display: false
+                  }
+                }
+              },
+
+              elements: {
+                line: {
+                  borderWidth: 1.5
+                }
+              }
+            }
+          });
+        }
+
+
+
+        // 🔥 FETCH DATA (same as NFD)
+        async function loadSHMWaveform() {
+          try {
+            const response = await fetch("/api/latest-nfd-waveforms/");
+
+            if (!response.ok) {
+              console.warn("Waveform API failed:", response.status);
+              return;
+            }
+
+            const data = await response.json();
+
+            if (data.filtered_signal && data.filtered_signal.length > 0) {
+              drawSHMWaveform(data.filtered_signal);
+            }
+            if (data.spectrum_freqs && data.spectrum_magnitude) {
+              drawSHMSpectrum(data.spectrum_freqs, data.spectrum_magnitude);
+            }
+
+          } catch (err) {
+            console.error("SHM waveform error:", err);
+          }
+        }
+
+
+        // 🔁 AUTO REFRESH EVERY 5 SEC
+        loadSHMWaveform();
+        setInterval(() => {
+          if (document.visibilityState === "visible") {
+            loadSHMWaveform();
+          }
+        }, 10000);
+
+      </script>
+
+
+      <script>
+        async function updateSHMMetrics() {
+          try {
+            const response = await fetch("/api/shm/latest-metrics/");
+            const data = await response.json();
+
+            const peakFreqEl = document.getElementById("peak-freq");
+            const peakAccEl = document.getElementById("peak-acc");
+            const lastUpdateEl = document.getElementById("last-update");
+
+            if (peakFreqEl) {
+              peakFreqEl.innerText =
+                data.peak_frequency != null
+                  ? Number(data.peak_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (peakAccEl) {
+              peakAccEl.innerText =
+                data.peak_acceleration != null
+                  ? Number(data.peak_acceleration).toFixed(4)
+                  : "--.---";
+            }
+
+            if (lastUpdateEl) {
+              if (data.last_update) {
+                const date = new Date(data.last_update);
+             const datePart = date.toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+});
+
+const timePart = date.toLocaleTimeString('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+});
+
+lastUpdateEl.innerHTML = `
+  <div class="text-lg font-semibold">${datePart}</div>
+  <div class="flex items-center gap-1 text-base font-medium opacity-80">
+    <span>🕒</span>
+    <span>${timePart}</span>
+  </div>
+`;
+              } else {
+                lastUpdateEl.innerText = "--:--";
+              }
+            }
+
+            const activityTextEl = document.getElementById("activity-text");
+            const structuralEl = document.getElementById("structural-condition");
+            const activityDotEl = document.getElementById("activity-dot");
+
+            const alertsCountEl = document.getElementById("alerts-count");
+            const alertsBadgeEl = document.getElementById("alerts-badge");
+            const alertsDescEl = document.getElementById("alerts-desc");
+
+            if (data.peak_frequency != null) {
+              const freq = Number(data.peak_frequency);
+
+              // 🔥 STRUCTURAL CONDITION LOGIC
+              if (structuralEl) {
+                if (freq > 20) {
+                  structuralEl.innerText = "UNSTABLE";
+                  structuralEl.className = "text-lg font-semibold text-red-600";
+                } else {
+                  structuralEl.innerText = "STABLE";
+                  structuralEl.className = "text-lg font-semibold text-emerald-600";
+                }
+              }
+
+              let activityLabel = "No Data";
+              let activityTextClass = "text-sm font-medium text-slate-500";
+              let activityDotClass = "w-2.5 h-2.5 rounded-full bg-slate-400";
+
+              let alertCount = 0;
+              let alertLabel = "Safe";
+              let alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+              let alertDesc = "No thresholds exceeded";
+
+              if (freq >= 0.5 && freq <= 5.0) {
+                activityLabel = "Ambient";
+                activityTextClass = "text-sm font-medium text-emerald-700";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+
+                alertCount = 0;
+                alertLabel = "Safe";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+                alertDesc = "No thresholds exceeded";
+
+              } else if (freq > 5.0 && freq <= 9.8) {
+                activityLabel = "Human Activity";
+                activityTextClass = "text-sm font-medium text-amber-600";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-amber-500";
+
+                alertCount = 0;
+                alertLabel = "Safe";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+                alertDesc = "No thresholds exceeded";
+
+              } else if (freq > 9.8 && freq <= 20.0) {
+                activityLabel = "Unusual / Transient";
+                activityTextClass = "text-sm font-medium text-red-600";
+                activityDotClass = "w-2.5 h-2.5 rounded-full bg-red-500";
+
+                alertCount = 1;
+                alertLabel = "Alert";
+                alertDotClass = "h-2.5 w-2.5 rounded-full bg-red-500";
+                alertDesc = "Threshold exceeded";
+              }
+
+              if (activityTextEl) {
+                activityTextEl.innerText = activityLabel;
+                activityTextEl.className = activityTextClass;
+              }
+
+              if (activityDotEl) {
+                activityDotEl.className = activityDotClass;
+              }
+
+              if (alertsCountEl) {
+                alertsCountEl.innerText = alertCount;
+              }
+
+              if (alertsBadgeEl) {
+                alertsBadgeEl.innerHTML = `<span id="alerts-dot" class="${alertDotClass}"></span>${alertLabel}`;
+              }
+
+              if (alertsDescEl) {
+                alertsDescEl.innerText = alertDesc;
+              }
+            }
+
+          } catch (err) {
+            console.error("Failed to update SHM metrics:", err);
+          }
+        }
+
+        // run once on page load
+        updateSHMMetrics();
+
+        // auto update every 60 seconds
+        setInterval(updateSHMMetrics, 5000);
+      </script>
+
+      <script>
+        let shmSpectrumChart = null;
+
+        function drawSHMSpectrum(freqs, magnitudes) {
+          const canvas = document.getElementById("shmSpectrum");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+          // 🔥 FIND PEAK FREQUENCY
+          let peakIndex = 0;
+          let peakFreq = 0;
+
+          if (freqs.length && magnitudes.length) {
+            peakIndex = magnitudes.indexOf(Math.max(...magnitudes));
+            peakFreq = freqs[peakIndex] || 0;
+
+            const peakEl = document.getElementById("peak-spectrum");
+            if (peakEl) {
+              peakEl.innerText = peakFreq.toFixed(2) + " Hz peak";
+            }
+          }
+
+          if (shmSpectrumChart) {
+            shmSpectrumChart.destroy();
+          }
+
+          shmSpectrumChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: freqs,
+              datasets: [
+                {
+                  label: "Spectral Density",
+                  data: magnitudes,
+                  borderColor: "#dc2626",
+                  borderWidth: 2,
+                  tension: 0.25,
+                  pointRadius: 0,
+                  fill: false
+                },
+
+                // ✅ GREEN PEAK DOT (FIXED)
+                {
+                  data: magnitudes.map((v, i) => i === peakIndex ? v : null),
+                  pointRadius: 5,
+                  pointBackgroundColor: "#16a34a",
+                  pointBorderColor: "#ffffff",
+                  pointBorderWidth: 2,
+                  showLine: false
+                }
+              ]
+
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+
+              plugins: {
+                legend: { display: false }
+              },
+
+              scales: {
+                x: {
+                  display: false,   // ❌ removes axis line + ticks
+                  grid: {
+                    display: false  // ❌ removes vertical grid lines
+                  }
+                },
+                y: {
+                  ticks: { display: false },
+                  grid: {
+                    color: "rgba(0,0,0,0.05)"
+                  }
+                }
+              }
+            }
+          });
+        }
+      </script>
+
+
+
+      <script>
+        async function updateSHMPredictive() {
+          try {
+            const response = await fetch("/api/shm/predictive/");
+            const data = await response.json();
+
+            const statusEl = document.getElementById("predict-status");
+            const residualEl = document.getElementById("predict-residual");
+            const seismoEl = document.getElementById("predict-seismobuild-frequency");
+            const measuredEl = document.getElementById("predict-measured-frequency");
+            const modeEl = document.getElementById("predict-matched-mode");
+            const diffHzEl = document.getElementById("predict-diff-hz");
+            const diffPctEl = document.getElementById("predict-diff-percent");
+
+            if (statusEl) {
+              statusEl.innerText = data.sigma_status || "No Data";
+
+              if (data.sigma_status === "Inside Safe Zone") {
+                statusEl.className = "text-lg font-semibold text-emerald-600";
+              } else if (data.sigma_status === "Warning Zone") {
+                statusEl.className = "text-lg font-semibold text-amber-600";
+              } else {
+                statusEl.className = "text-lg font-semibold text-red-600";
+              }
+            }
+
+            if (residualEl) {
+              residualEl.innerText =
+                data.residual_value != null
+                  ? `${data.residual_value >= 0 ? "+" : ""}${Number(data.residual_value).toFixed(2)} Hz`
+                  : "± --.-- Hz";
+            }
+
+            if (seismoEl) {
+              seismoEl.innerText =
+                data.seismobuild_frequency != null
+                  ? Number(data.seismobuild_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (measuredEl) {
+              measuredEl.innerText =
+                data.measured_frequency != null
+                  ? Number(data.measured_frequency).toFixed(2) + " Hz"
+                  : "--.-- Hz";
+            }
+
+            if (modeEl) {
+              modeEl.innerText =
+                data.matched_mode != null
+                  ? "Mode " + data.matched_mode
+                  : "--";
+            }
+
+            if (diffHzEl) {
+              diffHzEl.innerText =
+                data.frequency_difference != null
+                  ? `${data.frequency_difference >= 0 ? "+" : ""}${Number(data.frequency_difference).toFixed(2)} Hz`
+                  : "--.-- Hz";
+            }
+
+            if (diffPctEl) {
+              if (data.difference_percent != null) {
+                diffPctEl.innerText = `${data.difference_percent >= 0 ? "+" : ""}${Number(data.difference_percent).toFixed(2)} %`;
+
+                if (Math.abs(data.difference_percent) <= 5) {
+                  diffPctEl.className = "font-semibold text-emerald-600";
+                } else if (Math.abs(data.difference_percent) <= 10) {
+                  diffPctEl.className = "font-semibold text-amber-600";
+                } else {
+                  diffPctEl.className = "font-semibold text-red-600";
+                }
+              } else {
+                diffPctEl.innerText = "--.-- %";
+                diffPctEl.className = "font-semibold text-slate-500";
+              }
+            }
+
+            // ===== MODE SHAPE VISUALIZATION =====
+            const building = document.getElementById("building");
+            const shapeLabel = document.getElementById("mode-shape-label");
+
+            if (building && data.dominant_direction) {
+              // reset classes
+              building.className = "flex flex-col items-center gap-1";
+
+              const dir = data.dominant_direction.toLowerCase();
+
+              // apply mode class
+              building.classList.add("mode-" + dir);
+
+              if (shapeLabel) {
+                shapeLabel.innerText = data.dominant_direction;
+              }
+            }
+
+          } catch (err) {
+            console.error("Failed to update SHM predictive analytics:", err);
+          }
+        }
+
+        updateSHMPredictive();
+        setInterval(updateSHMPredictive, 5000);
+      </script>
+
+
+
+
+
+      <style>
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          background-color: #10b981;
+          border-radius: 9999px;
+          display: inline-block;
+          animation: breathe 2.5s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.7;
+          }
+
+          50% {
+            transform: scale(1.5);
+            opacity: 1;
+          }
+        }
+      </style>
+
+
+
+      <style>
+        .activity-bar {
+          height: 4px;
+          border-radius: 9999px;
+          background: linear-gradient(90deg,
+              rgba(16, 185, 129, 0.2) 0%,
+              rgba(16, 185, 129, 0.8) 50%,
+              rgba(16, 185, 129, 0.2) 100%);
+          background-size: 200% 100%;
+          animation: flowBar 3s ease-in-out infinite;
+        }
+
+        @keyframes flowBar {
+          0% {
+            background-position: 0% 50%;
+            transform: scaleX(0.95);
+            opacity: 0.7;
+          }
+
+          50% {
+            background-position: 100% 50%;
+            transform: scaleX(1);
+            opacity: 1;
+          }
+
+          100% {
+            background-position: 0% 50%;
+            transform: scaleX(0.95);
+            opacity: 0.7;
+          }
+        }
+      </style>
+
+      <style>
+        /* Ux = left-right */
+        .mode-ux {
+          animation: moveX 1.5s ease-in-out infinite;
+        }
+
+        /* Uy = front-back */
+        .mode-uy {
+          animation: moveY 1.5s ease-in-out infinite;
+        }
+
+        /* Uz = up-down */
+        .mode-uz {
+          animation: moveZ 1.5s ease-in-out infinite;
+        }
+
+        /* Rx = twisting */
+        .mode-rx {
+          animation: rotateX 1.5s ease-in-out infinite;
+        }
+
+        /* Ry */
+        .mode-ry {
+          animation: rotateY 1.5s ease-in-out infinite;
+        }
+
+        /* Rz */
+        .mode-rz {
+          animation: rotateZ 1.5s ease-in-out infinite;
+        }
+
+        /* KEYFRAMES */
+
+        @keyframes moveX {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(10px);
+          }
+        }
+
+        @keyframes moveY {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(10px);
+          }
+        }
+
+        @keyframes moveZ {
+
+          0%,
+          100% {
+            transform: scaleY(1);
+          }
+
+          50% {
+            transform: scaleY(1.2);
+          }
+        }
+
+        @keyframes rotateX {
+
+          0%,
+          100% {
+            transform: rotateX(0deg);
+          }
+
+          50% {
+            transform: rotateX(25deg);
+          }
+        }
+
+        @keyframes rotateY {
+
+          0%,
+          100% {
+            transform: rotateY(0deg);
+          }
+
+          50% {
+            transform: rotateY(25deg);
+          }
+        }
+
+        @keyframes rotateZ {
+
+          0%,
+          100% {
+            transform: rotateZ(0deg);
+          }
+
+          50% {
+            transform: rotateZ(15deg);
+          }
+        }
+      </style>
+
+      <style>
+        /* floors base */
+        .floor {
+          transition: all 0.3s ease;
+        }
+
+        /* ===================== */
+        /* Ux = Side sway */
+        /* ===================== */
+        .mode-ux .floor-1 {
+          animation: sway1 1.5s ease-in-out infinite;
+        }
+
+        .mode-ux .floor-2 {
+          animation: sway2 1.5s ease-in-out infinite;
+        }
+
+        .mode-ux .floor-3 {
+          animation: sway3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* Uy = vertical (simulate front/back) */
+        /* ===================== */
+        .mode-uy .floor-1 {
+          animation: lift1 1.5s ease-in-out infinite;
+        }
+
+        .mode-uy .floor-2 {
+          animation: lift2 1.5s ease-in-out infinite;
+        }
+
+        .mode-uy .floor-3 {
+          animation: lift3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* Rx = twisting */
+        /* ===================== */
+        .mode-rx .floor-1 {
+          animation: twist1 1.5s ease-in-out infinite;
+        }
+
+        .mode-rx .floor-2 {
+          animation: twist2 1.5s ease-in-out infinite;
+        }
+
+        .mode-rx .floor-3 {
+          animation: twist3 1.5s ease-in-out infinite;
+        }
+
+        /* ===================== */
+        /* KEYFRAMES */
+        /* ===================== */
+
+        /* sway (bigger movement on top floor) */
+        @keyframes sway1 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(4px);
+          }
+        }
+
+        @keyframes sway2 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(8px);
+          }
+        }
+
+        @keyframes sway3 {
+
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(12px);
+          }
+        }
+
+        /* vertical */
+        @keyframes lift1 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-2px);
+          }
+        }
+
+        @keyframes lift2 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+
+        @keyframes lift3 {
+
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-6px);
+          }
+        }
+
+        /* twist */
+        @keyframes twist1 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(2deg);
+          }
+        }
+
+        @keyframes twist2 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(-3deg);
+          }
+        }
+
+        @keyframes twist3 {
+
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+
+          50% {
+            transform: rotate(5deg);
+          }
+        }
+      </style>
+
+      
+
+     
+
+<style>
+  [x-cloak] {
+    display: none !important;
+  }
+</style>
+
+
+
+
+
+
+{% endblock %}

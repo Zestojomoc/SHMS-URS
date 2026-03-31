@@ -1,0 +1,1410 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Drift Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+  [x-cloak] {
+    display: none !important;
+  }
+
+  .signal-line {
+    height: 4px;
+    border-radius: 9999px;
+
+    background: linear-gradient(90deg,
+        rgba(251, 191, 36, 0.2) 0%,
+        rgba(251, 146, 60, 0.9) 50%,
+        rgba(251, 191, 36, 0.2) 100%);
+
+    background-size: 200% 100%;
+
+    animation: signalFlow 2s ease-in-out infinite;
+  }
+
+  @keyframes signalFlow {
+    0% {
+      background-position: 0% 50%;
+      transform: scaleX(0.96);
+      opacity: 0.8;
+    }
+
+    50% {
+      background-position: 100% 50%;
+      transform: scaleX(1);
+      opacity: 1;
+    }
+
+    100% {
+      background-position: 0% 50%;
+      transform: scaleX(0.96);
+      opacity: 0.8;
+    }
+  }
+</style>
+
+<div x-data="{
+    page: localStorage.getItem('driftPage') || 'dashboard',
+    tab: localStorage.getItem('driftTab') || 'chart',
+
+    setPage(p) {
+      this.page = p
+      localStorage.setItem('driftPage', p)
+    },
+
+    setTab(t) {
+      this.tab = t
+      localStorage.setItem('driftTab', t)
+    }
+  }" class="flex h-full gap-6 p-6 w-full">
+
+
+  <!-- ========== SIDEBAR SHITTTT -->
+  <aside class="w-64 flex-shrink-0 rounded-[26px] p-6
+                bg-white/55 backdrop-blur-2xl
+                border border-white/60
+                shadow-[0_18px_60px_rgba(139,69,19,0.18)]
+                flex flex-col">
+
+    <div class="mb-6">
+      <h2 class="text-lg font-bold text-[color:var(--text-100)]">ISDM Admin</h2>
+      <p class="text-xs opacity-70">Inter-Story Drift Monitoring</p>
+    </div>
+
+    <nav class="space-y-2 text-sm">
+
+      <!-- Dashboard -->
+      <div @click="setPage('dashboard')" :class="page==='dashboard'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Dashboard
+      </div>
+
+      <!-- Search -->
+      <div @click="setPage('search')" :class="page==='search'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        Search
+      </div>
+
+      <!-- History  -->
+      <div @click="setPage('history')" :class="page==='history'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        History
+      </div>
+
+      <!-- About -->
+      <div @click="setPage('about')" :class="page==='about'
+          ? 'bg-gradient-to-r from-[var(--primary-100)] to-[var(--primary-200)] text-white shadow'
+          : 'bg-white/60 border border-white opacity-85 hover:opacity-100 hover:shadow'"
+        class="px-4 py-3 rounded-2xl font-semibold cursor-pointer transition">
+        About
+      </div>
+
+    </nav>
+
+    <div class="mt-auto pt-6">
+      <a href="{% url 'logout' %}" class="block text-center px-4 py-3 rounded-2xl
+                bg-gradient-to-r from-[var(--accent-100)] to-[var(--primary-300)]
+                text-white font-semibold shadow hover:opacity-90 transition">
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN wrapper to -->
+  <main class="flex-1 overflow-y-auto space-y-6 pb-10">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-[color:var(--text-100)]">
+        DASHBOARD
+      </h1>
+      <p class="text-sm opacity-70 mt-1">
+        Floor-to-floor displacement monitoring
+      </p>
+    </div>
+
+    <!-- TOP STATUS CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+
+      <!-- OVERALL -->
+      <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-medium text-gray-500">Overall Status</div>
+          <span class="flex items-center gap-2 text-xs font-medium text-emerald-600">
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Safe
+          </span>
+        </div>
+
+        <div class="mt-3 text-2xl font-semibold text-gray-800">Normal</div>
+        <div class="mt-3 text-sm text-gray-500 leading-relaxed max-w-[220px]">
+          System operating within safe drift limits
+        </div>
+      </div>
+
+
+      <!-- FLOOR 1 -->
+      <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+        <div class="signal-line mb-5"></div>
+
+        <div class="mb-3">
+          <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+            Max Drift Ratio F1
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Drift Ratio</span>
+          <span id="f1-drift" class="text-lg font-semibold text-gray-800">--.-- %</span>
+        </div>
+      </div>
+
+
+      <!-- FLOOR 2 -->
+      <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+        <div class="signal-line mb-5"></div>
+
+        <div class="mb-3">
+          <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+            Max Drift Ratio F2
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Drift Ratio</span>
+          <span id="f2-drift" class="text-lg font-semibold text-gray-800">--.-- %</span>
+        </div>
+      </div>
+
+
+      <!-- FLOOR 3 -->
+      <div class="rounded-[20px] p-4 
+    bg-gradient-to-br from-white/80 to-white/40 
+    backdrop-blur-xl border border-white/50 
+    shadow-[0_10px_30px_rgba(0,0,0,0.08)] 
+    hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+    hover:-translate-y-1 transition-all duration-300">
+
+        <div class="signal-line mb-5"></div>
+
+        <div class="mb-3">
+          <div class="text-[14px] font-bold uppercase tracking-[0.2em] text-black-500">
+            Max Drift Ratio F3
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Drift Ratio</span>
+          <span id="f3-drift" class="text-lg font-semibold text-gray-800">--.-- %</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= WORKSPACE-->
+    <div class="rounded-[28px] p-6 bg-white/55 backdrop-blur-2xl border border-white/60 shadow">
+
+      <!-- ================= DASHBOARD -->
+      <div x-show="page==='dashboard'" x-cloak>
+
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-semibold text-lg">Drift Workspace</h2>
+
+          <div class="inline-flex gap-1 rounded-2xl p-1 bg-white/60 border shadow-inner">
+            <button @click="tab='chart'" :class="tab==='chart' ? 'bg-white shadow-sm' : 'opacity-70'"
+              class="px-4 py-2 rounded-xl text-sm">
+              Drift Chart
+            </button>
+
+            <button @click="tab='results'" :class="tab==='results' ? 'bg-white shadow-sm' : 'opacity-70'"
+              class="px-4 py-2 rounded-xl text-sm">
+              Results
+            </button>
+          </div>
+        </div>
+
+
+        <div x-show="tab==='results'" x-cloak class="space-y-6">
+
+          <!-- ================= FLOOR 1 ================= -->
+          <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+            <h3 class="font-semibold text-base mb-4">Floor 1 </h3>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+
+              <!-- DRIFT -->
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                <p id="f1-drift-x" class="font-semibold">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                <p id="f1-drift-y" class="font-semibold">--.--</p>
+              </div>
+
+              <!-- ACC -->
+              <div>
+                <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                <p id="f1-acc-x" class="font-semibold">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                <p id="f1-acc-y" class="font-semibold">--.--</p>
+              </div>
+              
+
+              <!-- BASELINE -->
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                <p id="f1-base-x" class="font-semibold">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                <p id="f1-base-y" class="font-semibold">--.--</p>
+              </div>
+
+              <!-- DIFF -->
+              <div class="col-span-2">
+                <p class="opacity-60 text-xs">Drift ratio difference</p>
+                <p id="f1-diff" class="font-semibold text-emerald-600">--.--</p>
+              </div>
+
+            </div>
+          </div>
+
+
+          <!-- ================= FLOOR 2 ================= -->
+          <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+            <h3 class="font-semibold text-base mb-4">Floor 2 </h3>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                <p id="f2-drift-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                <p id="f2-drift-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                <p id="f2-acc-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                <p id="f2-acc-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                <p id="f2-base-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                <p id="f2-base-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div class="col-span-2">
+                <p class="opacity-60 text-xs">Drift ratio difference</p>
+                <p id="f2-diff" class="font-semibold text-emerald-600">--.--</p>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- ================= FLOOR 3 ================= -->
+          <div class="rounded-2xl bg-white/60 p-5 border shadow-sm">
+            <h3 class="font-semibold text-base mb-4">Floor 3</h3>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+                <p id="f3-drift-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+                <p id="f3-drift-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+                <p id="f3-acc-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+                <p id="f3-acc-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+                <p id="f3-base-x" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div>
+                <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+                <p id="f3-base-y" class="font-semibold text-gray-800">--.--</p>
+              </div>
+              <div class="col-span-2">
+                <p class="opacity-60 text-xs">Drift ratio difference</p>
+                <p id="f3-diff" class="font-semibold text-emerald-600">--.--</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      
+
+      <!-- CHART TABS -->
+
+      <div x-show="tab==='chart'" x-cloak class="flex flex-col gap-6">
+
+        <!-- LIVE ACCELERATION -->
+        <div class="rounded-2xl bg-white/60 p-4">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold">Live Acceleration Waveform from RS4D</h3>
+            <span class="text-xs opacity-60">Real-time (g)</span>
+          </div>
+
+          <div class="h-[250px] rounded-xl bg-white/50 p-2">
+            <canvas id="driftWaveform"></canvas>
+          </div>
+        </div>
+
+        <!-- FLOOR 1 -->
+        <div class="rounded-2xl bg-white/60 p-4">
+          <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 1</h3>
+          <div class="h-[180px] bg-white/50 rounded-xl p-2">
+            <canvas id="driftChart1"></canvas>
+          </div>
+        </div>
+
+        <!-- FLOOR 2 -->
+        <div class="rounded-2xl bg-white/60 p-4">
+          <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 2</h3>
+          <div class="h-[180px] bg-white/50 rounded-xl p-2">
+            <canvas id="driftChart2"></canvas>
+          </div>
+        </div>
+
+        <!-- FLOOR 3 -->
+        <div class="rounded-2xl bg-white/60 p-4">
+          <h3 class="text-sm font-semibold mb-3">Max Drift Ratio FLOOR 3</h3>
+          <div class="h-[180px] bg-white/50 rounded-xl p-2">
+            <canvas id="driftChart3"></canvas>
+          </div>
+        </div>
+
+
+      </div>
+
+    </div>
+
+
+
+
+
+    <!-- ================= SEARCH -->
+<div x-show="page==='search'" x-cloak>
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Search</h2>
+      <p class="text-xs opacity-70 mt-1">
+        Find drift results using date, time, and duration
+      </p>
+    </div>
+
+    <button id="export-drift-search"
+      class="px-4 py-2 rounded-xl bg-red-500 text-white font-semibold shadow hover:bg-green-600 transition">
+      Export PDF
+    </button>
+    
+  </div>
+
+  <div class="mt-6 relative min-h-[860px]">
+    <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden p-4 space-y-4">
+
+      <!-- SEARCH INPUTS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+
+        <!-- DATE -->
+        <div>
+          <label class="block text-xs font-medium opacity-70 mb-1">Date & Time</label>
+          <input
+            type="datetime-local"
+            id="drift-search-datetime"
+            class="w-full rounded-xl p-3 bg-white/70 border border-white/80 outline-none"
+          >
+        </div>
+
+        <!-- DURATION -->
+        <div>
+          <label class="block text-xs font-medium opacity-70 mb-1">Duration (seconds)</label>
+          <input
+            type="number"
+            id="drift-search-duration"
+            min="1"
+            placeholder="e.g. 60"
+            class="w-full rounded-xl p-3 bg-white/70 border border-white/80 outline-none"
+          >
+        </div>
+
+        <!-- RUN SEARCH BUTTON -->
+        <div>
+          <button
+              type="button"
+              id="drift-run-search-btn"
+            class="w-full rounded-xl px-4 py-3 font-semibold text-white shadow transition hover:opacity-90
+                  bg-gradient-to-r from-orange-500 to-red-500">
+            Run Search
+          </button>
+        </div>
+
+      </div>
+
+      <!-- SEARCH SUMMARY CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+          <div class="text-xs opacity-60">Search Date & Time</div>
+          <span id="drift-search-datetime-preview">--</span>
+        </div>
+
+        <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+          <div class="text-xs opacity-60">Duration</div>
+          <span id="drift-search-duration-preview">-- sec</span>
+        </div>
+       </div>
+
+
+
+      <!-- RESULTS -->
+      <div class="space-y-4">
+
+        <!-- FLOOR 1 -->
+        <div class="rounded-2xl bg-white/70 border border-white/80 p-4 relative">
+          <div class="text-sm font-semibold mb-3">Floor 1</div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+              <p id="search-f1-drift-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+              <p id="search-f1-drift-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+              <p id="search-f1-acc-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+              <p id="search-f1-acc-y" class="font-semibold">--.--</p>
+
+              <p class="opacity-60 text-xs mt-2">Max Drift Ratio</p>
+              <p id="search-f1-mdr" class="font-semibold text-blue-600">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+              <p id="search-f1-base-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+              <p id="search-f1-base-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div class="col-span-2">
+              <p class="opacity-60 text-xs">Drift ratio difference</p>
+              <p id="search-f1-diff" class="font-semibold text-emerald-600">--.--</p>
+            </div>
+
+      
+
+          </div>
+        </div>
+
+        <!-- FLOOR 2 -->
+        <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+          <div class="text-sm font-semibold mb-3">Floor 2</div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+              <p id="search-f2-drift-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+              <p id="search-f2-drift-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+              <p id="search-f2-acc-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+              <p id="search-f2-acc-y" class="font-semibold">--.--</p>
+
+              <p class="opacity-60 text-xs mt-2">Max Drift Ratio</p>
+              <p id="search-f2-mdr" class="font-semibold text-blue-600">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+              <p id="search-f2-base-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+              <p id="search-f2-base-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div class="col-span-2">
+              <p class="opacity-60 text-xs">Drift ratio difference</p>
+              <p id="search-f2-diff" class="font-semibold text-emerald-600">--.--</p>
+            </div>
+
+      
+
+          </div>
+        </div>
+
+
+
+        <!-- FLOOR 3 -->
+        <div class="rounded-2xl bg-white/70 border border-white/80 p-4">
+          <div class="text-sm font-semibold mb-3">Floor 3</div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio X (ENE)</p>
+              <p id="search-f3-drift-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio Y (ENN)</p>
+              <p id="search-f3-drift-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration X (ENE)</p>
+              <p id="search-f3-acc-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Acceleration Y (ENN)</p>
+              <p id="search-f3-acc-y" class="font-semibold">--.--</p>
+
+              <p class="opacity-60 text-xs mt-2">Max Drift Ratio</p>
+              <p id="search-f3-mdr" class="font-semibold text-blue-600">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline X (ENE)</p>
+              <p id="search-f3-base-x" class="font-semibold">--.--</p>
+            </div>
+
+            <div>
+              <p class="opacity-60 text-xs">Drift ratio baseline Y (ENN)</p>
+              <p id="search-f3-base-y" class="font-semibold">--.--</p>
+            </div>
+
+            <div class="col-span-2">
+              <p class="opacity-60 text-xs">Drift ratio difference</p>
+              <p id="search-f3-diff" class="font-semibold text-emerald-600">--.--</p>
+            </div>
+          </div>
+
+          
+
+
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+
+   
+    <!-- ================= HISTORY -->
+<div x-show="page==='history'" x-cloak>
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="font-semibold text-lg text-[color:var(--text-100)]">Monitoring History</h2>
+      <p class="text-xs opacity-70 mt-1">
+        Archived drift monitoring records
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-6 relative h-[700px]">
+    <div class="absolute inset-0 rounded-2xl bg-white/70 border border-white/80 overflow-hidden p-4 flex flex-col gap-4">
+
+      <!-- DATE FILTER ONLY -->
+      <div class="rounded-2xl bg-white/70 border border-white/80 p-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <div class="text-xs font-medium opacity-70 mb-1">Date</div>
+            <input
+              id="drift-history-date"
+              type="date"
+              class="w-full rounded-xl p-2 bg-white/70 border border-white/80 outline-none"
+              onchange="filterDriftHistoryRecords()"
+            >
+          </div>
+
+          <div class="flex items-end">
+            <button
+              type="button"
+              onclick="clearDriftHistoryFilter()"
+              class="w-full rounded-xl px-4 py-2 bg-white border border-white/80 text-sm font-medium hover:bg-gray-50 transition">
+              Clear Filter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECORDS -->
+      <div class="flex-1 rounded-2xl bg-white/60 border border-white/80 overflow-auto">
+        <div class="px-4 py-3 border-b border-white/70 flex items-center justify-between">
+          <div class="text-sm font-semibold">Archived Records</div>
+          <div class="text-xs opacity-70">Drift History</div>
+        </div>
+
+        <div class="p-4 space-y-3" id="drift-history-records-container">
+
+          {% for record in drift_history_records %}
+          <div
+            x-data="{ open: false }"
+            class="drift-history-record bg-white/70 rounded-2xl p-4 mb-3 shadow-sm cursor-pointer transition hover:shadow-md"
+            data-date="{{ record.timestamp|date:'Y-m-d' }}"
+          >
+
+            <!-- TOP ROW -->
+            <div class="flex justify-between items-center" @click="open = !open">
+
+              <!-- LEFT -->
+              <div>
+                <div class="font-semibold text-sm text-gray-800">
+                  {{ record.timestamp|date:"Y-m-d • H:i" }}
+                </div>
+                <div class="text-xs opacity-60">
+                  F1: {{ record.f1_mdr|floatformat:4 }} •
+                  F2: {{ record.f2_mdr|floatformat:4 }} •
+                  F3: {{ record.f3_mdr|floatformat:4 }}
+                </div>
+              </div>
+
+              <!-- RIGHT -->
+              <div class="flex items-center gap-2 text-xs">
+
+
+                <a href="/export/drift/pdf/?id={{ record.id }}"
+                  class="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-green-600 transition shadow-sm">
+                  PDF
+                </a>
+
+              </div>
+            </div>
+
+            
+          <!-- EXPANDED DETAILS -->
+            <div x-show="open" x-transition
+              class="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
+
+              <div>
+                <span class="text-gray-400">MAX DRIFT RATIO FLOOR 1</span><br>
+                <span class="font-semibold text-gray-800">
+                  {{ record.f1_mdr|floatformat:4 }}
+                </span>
+              </div>
+
+              <div>
+                <span class="text-gray-400">MAX DRIFT RATIO FLOOR 2</span><br>
+                <span class="font-semibold text-gray-800">
+                  {{ record.f2_mdr|floatformat:4 }}
+                </span>
+              </div>
+
+              <div>
+                <span class="text-gray-400">MAX DRIFT RATIO FLOOR 3</span><br>
+                <span class="font-semibold text-gray-800">
+                  {{ record.f3_mdr|floatformat:4 }}
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
+          {% empty %}
+          <div class="text-center text-sm opacity-60 py-10">
+            No drift history yet
+          </div>
+          {% endfor %}
+
+          <div id="drift-history-no-match" class="hidden text-center text-sm opacity-60 py-10">
+            No matching drift history records found
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+      <div x-show="page==='about'" x-cloak class="space-y-6">
+
+        <!-- HEADER -->
+        <div>
+          <h2 class="text-2xl font-bold text-[color:var(--text-100)]">
+            About Drift Monitoring
+          </h2>
+          <p class="text-sm opacity-70 mt-1">
+            Inter-Story Drift Analysis for Structural Health Monitoring
+          </p>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div class="rounded-2xl p-5 
+            bg-white/55 backdrop-blur-2xl 
+            border border-white/60 shadow">
+
+          <h3 class="font-semibold text-lg mb-2">System Overview</h3>
+
+          <p class="text-sm opacity-80 leading-relaxed">
+            This module is designed to monitor inter-story drift behavior of structures using vibration-based analysis.
+            It estimates displacement from acceleration signals captured by seismic sensors and evaluates structural performance
+            relative to baseline models derived from ETABS.
+          </p>
+        </div>
+
+        <!-- METHODOLOGY -->
+        <div class="rounded-2xl p-5 
+            bg-white/55 backdrop-blur-2xl 
+            border border-white/60 shadow">
+
+          <h3 class="font-semibold text-lg mb-3">Methodology</h3>
+
+          <ul class="text-sm opacity-80 space-y-2">
+            <li>• Acceleration signals are collected from RS4D seismic sensors</li>
+            <li>• Signals are processed to compute RMS acceleration</li>
+            <li>• Displacement is derived using frequency-domain relationships</li>
+            <li>• Inter-story drift ratios are calculated per floor</li>
+            <li>• Results are compared against ETABS baseline values</li>
+          </ul>
+        </div>
+
+        <!-- PARAMETERS -->
+        <div class="rounded-2xl p-5 
+            bg-white/55 backdrop-blur-2xl 
+            border border-white/60 shadow">
+
+          <h3 class="font-semibold text-lg mb-3">Key Parameters</h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm opacity-80">
+
+            <div>
+              <p class="font-medium">Drift Ratio</p>
+              <p>Measure of relative displacement between floors.</p>
+            </div>
+
+            <div>
+              <p class="font-medium">Baseline Drift</p>
+              <p>Reference values obtained from ETABS structural model.</p>
+            </div>
+
+            <div>
+              <p class="font-medium">Acceleration</p>
+              <p>Measured ground motion converted to structural response.</p>
+            </div>
+
+            <div>
+              <p class="font-medium">Drift Difference</p>
+              <p>Deviation between measured drift and baseline.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SYSTEM INFO -->
+        <div class="rounded-2xl p-5 
+            bg-white/55 backdrop-blur-2xl 
+            border border-white/60 shadow">
+
+          <h3 class="font-semibold text-lg mb-2">System Information</h3>
+
+          <p class="text-sm opacity-80">
+            This module is part of an integrated Structural Health Monitoring (SHM) system combining
+            frequency domain analysis (NFD) and drift-based evaluation for real-time structural assessment.
+          </p>
+        </div>
+
+        <!-- TEAM -->
+        <div class="rounded-2xl p-5 
+            bg-white/55 backdrop-blur-2xl 
+            border border-white/60 shadow">
+
+          <h3 class="font-semibold text-lg mb-3">Research Team</h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+  <!-- MEMBER -->
+  <div class="flex items-center gap-3 p-4 rounded-2xl 
+      bg-white/50 backdrop-blur border border-white/40 shadow-sm hover:shadow transition">
+    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <div>
+      <p class="text-sm font-semibold">GALING, CRIS ARL C.</p>
+      <p class="text-xs opacity-60">Research Member</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 p-4 rounded-2xl 
+      bg-white/50 backdrop-blur border border-white/40 shadow-sm hover:shadow transition">
+    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <div>
+      <p class="text-sm font-semibold">MANADERO, ANJELA DOLLY O.</p>
+      <p class="text-xs opacity-60">Research Member</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 p-4 rounded-2xl 
+      bg-white/50 backdrop-blur border border-white/40 shadow-sm hover:shadow transition">
+    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <div>
+      <p class="text-sm font-semibold">MENDOZA, TRICIA JANINE C.</p>
+      <p class="text-xs opacity-60">Research Member</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 p-4 rounded-2xl 
+      bg-white/50 backdrop-blur border border-white/40 shadow-sm hover:shadow transition">
+    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <div>
+      <p class="text-sm font-semibold">PANTALEON, HANNAH LIZCETTE M.</p>
+      <p class="text-xs opacity-60">Research Member</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 p-4 rounded-2xl 
+      bg-white/50 backdrop-blur border border-white/40 shadow-sm hover:shadow transition">
+    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">
+      👤
+    </div>
+    <div>
+      <p class="text-sm font-semibold">TEJADA, BRENT LESTER M.</p>
+      <p class="text-xs opacity-60">Research Member</p>
+    </div>
+  </div>
+
+</div>
+        </div>
+
+      </div>
+ </div>
+
+</main>
+
+<script>
+  let driftChart1 = null;
+  let driftChart2 = null;
+  let driftChart3 = null;
+
+
+  // 🔥 MOVE OUTSIDE (IMPORTANT)
+  function generateDriftSeries(baseValue) {
+    const points = 30;
+    const data = [];
+
+    for (let i = 0; i < points; i++) {
+      const jitter = (Math.random() - 0.5) * 0.01;
+      data.push(baseValue + jitter);
+    }
+
+    return data;
+  }
+
+  async function updateDriftTopCards() {
+    try {
+      const response = await fetch('/api/drift/live-metrics/');
+      const data = await response.json();
+
+      if (data.status !== 'success') return;
+
+      document.getElementById('f1-drift').textContent = data.floor_12_percent.toFixed(4);
+      document.getElementById('f2-drift').textContent = data.floor_23_percent.toFixed(4);
+      document.getElementById('f3-drift').textContent = data.floor_3_percent.toFixed(4);
+
+      updateDriftCharts(data.floor_12_percent, data.floor_23_percent, data.floor_3_percent);
+
+            // ===== FLOOR 1 =====
+      
+      document.getElementById('f1-acc-x').textContent = data.f1_acc_x_g.toFixed(6);
+      document.getElementById('f1-acc-y').textContent = data.f1_acc_y_g.toFixed(6);
+
+      document.getElementById('f1-drift-x').textContent = data.idr_12_x.toFixed(4);
+      document.getElementById('f1-drift-y').textContent = data.idr_12_y.toFixed(4);
+
+      document.getElementById('f1-base-x').textContent = data.f1_base_x.toFixed(4);
+      document.getElementById('f1-base-y').textContent = data.f1_base_y.toFixed(4);
+
+      document.getElementById('f1-diff').textContent = data.f1_diff.toFixed(4);
+
+      // ===== FLOOR 2 =====
+      
+      document.getElementById('f2-acc-x').textContent = data.f2_acc_x_g.toFixed(6);
+      document.getElementById('f2-acc-y').textContent = data.f2_acc_y_g.toFixed(6);
+
+      document.getElementById('f2-drift-x').textContent = data.idr_23_x.toFixed(4);
+      document.getElementById('f2-drift-y').textContent = data.idr_23_y.toFixed(4);
+
+      document.getElementById('f2-base-x').textContent = data.f2_base_x.toFixed(4);
+      document.getElementById('f2-base-y').textContent = data.f2_base_y.toFixed(4);
+
+      document.getElementById('f2-diff').textContent = data.f2_diff.toFixed(4);
+
+      // ===== FLOOR 3 =====
+      
+      document.getElementById('f3-acc-x').textContent = data.f3_acc_x_g.toFixed(6);
+      document.getElementById('f3-acc-y').textContent = data.f3_acc_y_g.toFixed(6);
+
+      document.getElementById('f3-drift-x').textContent = data.idr_3_x.toFixed(4);
+      document.getElementById('f3-drift-y').textContent = data.idr_3_y.toFixed(4);
+
+      document.getElementById('f3-base-x').textContent = data.f3_base_x.toFixed(4);
+      document.getElementById('f3-base-y').textContent = data.f3_base_y.toFixed(4);
+
+      document.getElementById('f3-diff').textContent = data.f3_diff.toFixed(4);
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateDriftTopCards();
+    setInterval(updateDriftTopCards, 60000);
+  });
+
+  function updateDriftCharts(val12, val23, val3) {
+
+    // ===== CHART 1 =====
+    if (!driftChart1) {
+      const ctx1 = document.getElementById('driftChart1').getContext('2d');
+
+      const series12 = generateDriftSeries(val12);
+      const max12 = Math.max(...series12);
+
+      driftChart1 = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: Array(30).fill(''),
+          datasets: [
+
+            {
+              data: series12,
+              borderColor: "#1d4ed8",
+              borderWidth: 2,
+              tension: 0.35,
+              pointRadius: 0
+            },
+
+            {
+              data: series12.map(v => v === max12 ? v : null),
+              pointRadius: 5,
+              pointBackgroundColor: "#dc2626",
+              pointBorderColor: "#ffffff",
+              pointBorderWidth: 2,
+              showLine: false
+            }
+
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+    } else {
+      const newSeries12 = generateDriftSeries(val12);
+      const max12 = Math.max(...newSeries12);
+
+      driftChart1.data.datasets[0].data = newSeries12;
+      driftChart1.data.datasets[1].data = newSeries12.map(v => v === max12 ? v : null);
+      driftChart1.update();
+    }
+
+    // ===== CHART 2 =====
+    if (!driftChart2) {
+      const ctx2 = document.getElementById('driftChart2').getContext('2d');
+
+      const series23 = generateDriftSeries(val23);
+      const max23 = Math.max(...series23);
+
+      driftChart2 = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: Array(30).fill(''),
+          datasets: [
+
+            {
+              data: series23,
+              borderColor: "#1d4ed8",
+              borderWidth: 2,
+              tension: 0.35,
+              pointRadius: 0
+            },
+
+            {
+              data: series23.map(v => v === max23 ? v : null),
+              pointRadius: 5,
+              pointBackgroundColor: "#dc2626",
+              pointBorderColor: "#ffffff",
+              pointBorderWidth: 2,
+              showLine: false
+            }
+
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+    } else {
+      const newSeries23 = generateDriftSeries(val23);
+      const max23 = Math.max(...newSeries23);
+
+      driftChart2.data.datasets[0].data = newSeries23;
+      driftChart2.data.datasets[1].data = newSeries23.map(v => v === max23 ? v : null);
+      driftChart2.update();
+    }
+
+    // ===== CHART 3 =====
+    if (!driftChart3) {
+      const ctx3 = document.getElementById('driftChart3').getContext('2d');
+
+      const series3 = generateDriftSeries(val3);
+      const max3 = Math.max(...series3);
+
+      driftChart3 = new Chart(ctx3, {
+        type: 'line',
+        data: {
+          labels: Array(30).fill(''),
+          datasets: [
+
+            {
+              data: series3,
+              borderColor: "#1d4ed8",
+              borderWidth: 2,
+              tension: 0.35,
+              pointRadius: 0
+            },
+
+            {
+              data: series3.map(v => v === max3 ? v : null),
+              pointRadius: 5,
+              pointBackgroundColor: "#dc2626",
+              pointBorderColor: "#ffffff",
+              pointBorderWidth: 2,
+              showLine: false
+            }
+
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+    } else {
+      const newSeries3 = generateDriftSeries(val3);
+      const max3 = Math.max(...newSeries3);
+
+      driftChart3.data.datasets[0].data = newSeries3;
+      driftChart3.data.datasets[1].data = newSeries3.map(v => v === max3 ? v : null);
+      driftChart3.update();
+    }
+  }
+</script>
+
+<script>
+  let driftWaveChart = null;
+
+  async function updateDriftWaveform() {
+    try {
+      const response = await fetch('/api/latest-nfd-waveforms/');
+      const data = await response.json();
+
+      if (!data.raw_signal || data.raw_signal.length === 0) return;
+
+      const signal = data.raw_signal;
+
+      const labels = signal.map((_, i) => i);
+
+      if (!driftWaveChart) {
+        const ctx = document.getElementById('driftWaveform').getContext('2d');
+
+        driftWaveChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Acceleration',
+              data: signal,
+              borderWidth: 2,
+              tension: 0.3,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+              x: {
+                display: false
+              },
+              y: {
+                ticks: {
+                  callback: function (value) {
+                    return value.toFixed(2);
+                  }
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        });
+
+      } else {
+        driftWaveChart.data.labels = labels;
+        driftWaveChart.data.datasets[0].data = signal;
+        driftWaveChart.update();
+      }
+
+    } catch (err) {
+      console.error('Waveform error:', err);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateDriftWaveform();
+    setInterval(updateDriftWaveform, 5000); // every 5 sec
+  });
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const runBtn = document.getElementById('drift-run-search-btn');
+
+  runBtn.addEventListener('click', async () => {
+
+  const datetime = document.getElementById('drift-search-datetime').value;
+  const duration = document.getElementById('drift-search-duration').value;
+
+  if (!datetime || !duration) {
+    alert("Please input date/time and duration");
+    return;
+  }
+
+  document.getElementById('drift-search-datetime-preview').textContent = datetime;
+  document.getElementById('drift-search-duration-preview').textContent = duration + " sec";
+
+  // 🔥 CALL BACKEND
+  const response = await fetch('/api/drift/search/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      datetime: datetime,
+      duration: duration
+    })
+  });
+
+  const data = await response.json();
+console.log("DRIFT SEARCH RESULT:", data);
+
+if (data.status !== 'success') {
+  alert(data.message || "No data found");
+  return;
+}
+
+// ===== FLOOR 1 =====
+document.getElementById('search-f1-acc-x').textContent = data.f1.acc_x.toFixed(4);
+document.getElementById('search-f1-acc-y').textContent = data.f1.acc_y.toFixed(4);
+document.getElementById('search-f1-mdr').textContent = data.f1.mdr.toFixed(4);
+
+document.getElementById('search-f1-drift-x').textContent = data.f1.drift_x.toFixed(4);
+document.getElementById('search-f1-drift-y').textContent = data.f1.drift_y.toFixed(4);
+
+document.getElementById('search-f1-base-x').textContent = data.f1.base_x.toFixed(4);
+document.getElementById('search-f1-base-y').textContent = data.f1.base_y.toFixed(4);
+
+document.getElementById('search-f1-diff').textContent = data.f1.diff.toFixed(4);
+
+// ===== FLOOR 2 =====
+document.getElementById('search-f2-acc-x').textContent = data.f2.acc_x.toFixed(4);
+document.getElementById('search-f2-acc-y').textContent = data.f2.acc_y.toFixed(4);
+document.getElementById('search-f2-mdr').textContent = data.f2.mdr.toFixed(4);
+
+document.getElementById('search-f2-drift-x').textContent = data.f2.drift_x.toFixed(4);
+document.getElementById('search-f2-drift-y').textContent = data.f2.drift_y.toFixed(4);
+
+document.getElementById('search-f2-base-x').textContent = data.f2.base_x.toFixed(4);
+document.getElementById('search-f2-base-y').textContent = data.f2.base_y.toFixed(4);
+
+document.getElementById('search-f2-diff').textContent = data.f2.diff.toFixed(4);
+
+// ===== FLOOR 3 =====
+document.getElementById('search-f3-acc-x').textContent = data.f3.acc_x.toFixed(6);
+document.getElementById('search-f3-acc-y').textContent = data.f3.acc_y.toFixed(6);
+document.getElementById('search-f3-mdr').textContent = data.f3.mdr.toFixed(4);
+
+document.getElementById('search-f3-drift-x').textContent = data.f3.drift_x.toFixed(4);
+document.getElementById('search-f3-drift-y').textContent = data.f3.drift_y.toFixed(4);
+
+document.getElementById('search-f3-base-x').textContent = data.f3.base_x.toFixed(4);
+document.getElementById('search-f3-base-y').textContent = data.f3.base_y.toFixed(4);
+
+document.getElementById('search-f3-diff').textContent = data.f3.diff.toFixed(4);
+
+});
+});
+</script>
+
+<script>
+function filterDriftHistoryRecords() {
+  const selectedDate = document.getElementById("drift-history-date")?.value || "";
+  const records = document.querySelectorAll(".drift-history-record");
+  const noMatch = document.getElementById("drift-history-no-match");
+
+  let visibleCount = 0;
+
+  records.forEach((record) => {
+    const recordDate = record.dataset.date;
+    let show = true;
+
+    if (selectedDate && recordDate !== selectedDate) {
+      show = false;
+    }
+
+    if (show) {
+      record.classList.remove("hidden");
+      visibleCount += 1;
+    } else {
+      record.classList.add("hidden");
+    }
+  });
+
+  if (noMatch) {
+    if (visibleCount === 0 && records.length > 0) {
+      noMatch.classList.remove("hidden");
+    } else {
+      noMatch.classList.add("hidden");
+    }
+  }
+}
+
+function clearDriftHistoryFilter() {
+  const dateInput = document.getElementById("drift-history-date");
+  if (dateInput) dateInput.value = "";
+  filterDriftHistoryRecords();
+}
+
+window.addEventListener("load", () => {
+  filterDriftHistoryRecords();
+});
+</script>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("export-drift-search");
+
+    btn.addEventListener("click", () => {
+
+        // ✅ FIXED IDs (MATCH YOUR HTML)
+        const datetime = document.getElementById("drift-search-datetime").value;
+        const duration = document.getElementById("drift-search-duration").value || 60;
+
+        if (!datetime) {
+            alert("Please select date and time first.");
+            return;
+        }
+
+        const url = `/export/drift/search/pdf/?datetime=${datetime}&duration=${duration}`;
+        window.open(url, "_blank");
+    });
+});
+</script>
+
+
+{% endblock %}

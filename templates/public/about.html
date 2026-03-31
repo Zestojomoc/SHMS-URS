@@ -1,0 +1,237 @@
+{% extends "base_public.html" %}
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+
+<!-- NAVBAR -->
+
+<div class="sticky top-0 z-50 mb-10">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-center justify-between
+                px-6 py-3 rounded-2xl
+                bg-white/50 backdrop-blur-xl
+                border border-white/40
+                shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+
+  <!-- LEFT: BRAND -->
+  <div class="flex items-center gap-2 font-semibold text-[color:var(--text-100)]">
+    <span class="text-orange-500 text-lg">●</span>
+    <span>SHMS </span>
+  </div>
+
+  <!-- CENTER: NAV LINKS -->
+  <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[color:var(--text-100)]/80">
+    <a href="{% url 'landing' %}" class="hover:text-orange-500 transition">Home</a>
+    <a href="{% url 'public_about' %}" class="text-orange-500 font-semibold">About Us</a>
+    <a href="{% url 'public_contact' %}" class="hover:text-orange-500 transition">
+            Contact
+            </a>
+  </div>
+
+  <!-- RIGHT: LOGIN -->
+  <div class="flex items-center">
+    <a href="{% url 'login' %}"
+       class="px-5 py-2 rounded-full
+              bg-gradient-to-r from-orange-500 to-orange-600
+              text-white shadow-md hover:shadow-lg
+              hover:-translate-y-[1px]
+              transition text-sm font-semibold">
+      Login
+    </a>
+  </div>
+
+</div>
+
+  </div>
+</div>
+
+<!-- HERO -->
+
+<div class="text-center mb-12">
+  <h1 class="text-2xl md:text-4xl font-bold tracking-tight text-[color:var(--text-100)]">
+    About the Structural Health Monitoring System
+  </h1>
+  <p class="mt-3 text-sm md:text-base text-[color:var(--text-100)]/60">
+    Shared public information for SHM, NFD, and Drift Monitoring
+  </p>
+  
+</div>
+
+<div class="max-w-6xl mx-auto px-4 space-y-8">
+
+  <!-- PROJECT OVERVIEW -->
+
+  <div class="rounded-[28px] p-6
+              bg-white/45 backdrop-blur-2xl
+              border border-white/40
+              shadow-[0_18px_60px_rgba(0,0,0,0.08)]">
+    <h2 class="text-xl font-semibold text-[color:var(--text-100)] mb-3">Project Overview</h2>
+    <p class="text-sm md:text-base leading-relaxed text-[color:var(--text-100)]/75">
+      The Structural Health Monitoring System is a centralized web-based platform designed to monitor
+      structural vibration behavior, identify natural frequency and damping characteristics, and evaluate
+      inter-story drift performance of the structure using Raspberry Shake 4D data and engineering-based analysis.
+    </p>
+  </div>
+
+  <!-- MODULES -->
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div class="rounded-[24px] p-5 bg-gradient-to-r from-yellow-500/10 to-yellow-400/10 backdrop-blur-xl border border-white/40 shadow-[0_12px_35px_rgba(0,0,0,0.07)]">
+      <h3 class="font-semibold text-[color:var(--text-100)] mb-2">Structural Health Monitoring</h3>
+      <p class="text-sm text-[color:var(--text-100)]/70 leading-relaxed">
+        Monitors vibration response and structural condition to assess overall system behavior and detect unusual activity.
+      </p>
+    </div>
+
+<div class="rounded-[24px] p-5 bg-gradient-to-r from-red-500/10 to-violet-400/10 backdrop-blur-xl border border-white/40 shadow-[0_12px_35px_rgba(0,0,0,0.07)]">
+  <h3 class="font-semibold text-[color:var(--text-100)] mb-2">Natural Frequency & Damping</h3>
+  <p class="text-sm text-[color:var(--text-100)]/70 leading-relaxed">
+    Identifies dynamic properties of the structure through frequency-domain analysis and damping estimation.
+  </p>
+</div>
+
+<div class="rounded-[24px] p-5 bg-gradient-to-r from-green-500/10 to-orange-400/10 backdrop-blur-xl border border-white/40 shadow-[0_12px_35px_rgba(0,0,0,0.07)]">
+  <h3 class="font-semibold text-[color:var(--text-100)] mb-2">Inter-Story Drift Monitoring</h3>
+  <p class="text-sm text-[color:var(--text-100)]/70 leading-relaxed">
+    Evaluates floor-level displacement behavior and drift-related structural performance indicators.
+  </p>
+</div>
+
+
+  </div>
+
+  <!-- TEAM -->
+<!-- RESEARCH ADVISOR -->
+
+<div class="mb-10">
+
+  <div class="rounded-[28px] p-6
+              bg-gradient-to-r from-orange-200/10 to-orange-500/10
+              backdrop-blur-xl
+              border border-red-500/30
+              shadow-[0_15px_50px_rgba(0,0,0,0.08)]">
+
+
+<div class="flex items-center gap-4">
+
+  <!-- ICON -->
+  <div class="w-12 h-12 rounded-full
+              bg-gradient-to-br from-orange-500 to-orange-600
+              flex items-center justify-center text-white shadow-md">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="w-6 h-6"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 14l9-5-9-5-9 5 9 5z"/>
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 14l6.16-3.422A12.083 12.083 0 0112 20.055
+               a12.083 12.083 0 01-6.16-9.477L12 14z"/>
+    </svg>
+
+  </div>
+
+  <!-- TEXT -->
+  <div>
+    <p class="text-xs uppercase tracking-wide text-orange-500 font-semibold">
+      Research Advisor
+    </p>
+
+    <p class="text-lg font-semibold text-[color:var(--text-100)]">
+      Engr. Jhon Louie F. Cuerdo
+    </p>
+  </div>
+
+</div>
+
+  </div>
+
+</div>
+ 
+
+  <div class="rounded-[28px] p-6
+              bg-gradient-to-r from-green-500/10 to-red-600/10 
+              backdrop-blur-2xl
+              border border-red/40
+              shadow-[0_18px_60px_rgba(0,0,0,0.08)]">
+    <h2 class="text-xl font-semibold text-[color:var(--text-100)] mb-6">
+  Research Team / System Members
+</h2>
+
+<div class="space-y-10">
+
+{% for team_name, members in teams.items %}
+
+  <div>
+
+
+<!-- TEAM HEADER -->
+<div class="flex items-center mb-4">
+  <h3 class="text-lg font-semibold text-[color:var(--text-100)]">
+    {{ team_name }}
+  </h3>
+  
+</div>
+
+<!-- MEMBERS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+  {% for member in members %}
+  <div class="flex items-center gap-3 p-4 rounded-2xl
+              bg-white/50 backdrop-blur-xl
+              border border-red/500
+              shadow-[0_10px_30px_rgba(0,0,0,0.06)]
+              hover:shadow-[0_15px_40px_rgba(0,0,0,0.10)]
+              hover:-translate-y-[2px]
+              transition-all duration-300">
+
+    <!-- Avatar -->
+  <div class="w-10 h-10 rounded-full
+            bg-gradient-to-br from-orange-500 to-orange-600
+            flex items-center justify-center shadow-sm">
+
+  <svg xmlns="http://www.w3.org/2000/svg"
+       class="w-5 h-5 text-white"
+       fill="none"
+       viewBox="0 0 24 24"
+       stroke="currentColor">
+
+    <path stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5.121 17.804A9 9 0 1118.88 17.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+
+</div>
+
+    <!-- Name -->
+    <div class="text-sm font-medium text-[color:var(--text-100)]">
+      {{ member }}
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+
+
+  </div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+
+  </div>
+
+</div>
+
+{% endblock %}
