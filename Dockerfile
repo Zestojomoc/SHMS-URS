@@ -11,17 +11,17 @@ COPY . /app/
 RUN apt-get update && apt-get install -y \
     gfortran \
     build-essential \
+    libatlas3-base \
     libopenblas-dev \
     liblapack-dev \
     python3-dev \
     libpq-dev \
-    curl \
-    libatlas3-base
+    curl
 
 # Install virtual environment package if not already available
 RUN apt-get install -y python3-venv
 
-# Set up the virtual environment
+# Set up Python virtual environment
 RUN python3 -m venv /venv
 
 # Activate the virtual environment and install Python dependencies
