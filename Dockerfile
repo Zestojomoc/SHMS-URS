@@ -16,7 +16,9 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     python3-dev \
     libpq-dev \
-    curl
+    curl \
+    meson \
+    ninja-build
 
 # Install virtual environment package if not already available
 RUN apt-get install -y python3-venv
